@@ -143,6 +143,9 @@ export class Stage extends UIElement implements IStage {
     }
 
     public addPointerMonitor(pointerId: number, target: EventDispatcher) {
+        if (pointerId == null || pointerId == -1)
+            pointerId = this._lastPointerId;
+
         let pointer: PointerInfo = this.getPointer(pointerId);
         if (pointer.captors.indexOf(target) == -1)
             pointer.captors.push(target);

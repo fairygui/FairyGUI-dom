@@ -5,7 +5,7 @@ import { GObject } from "./GObject";
 import { GRoot } from "./GRoot";
 import { UIConfig } from "./UIConfig";
 import { UIPackage } from "./UIPackage";
-import { Event } from "../event/Event";
+import { Event as UIEvent } from "../event/Event";
 import { Vec2 } from "../math/Vec2";
 import { Color } from "../math/Color";
 
@@ -292,9 +292,9 @@ export class GWindow extends GComponent {
             this.bringToFront();
     }
 
-    private __dragStart(evt: Event): void {
+    private __dragStart(evt: UIEvent): void {
         evt.preventDefault();
 
-        this.startDrag();
+        this.startDrag(evt.input.pointerId);
     }
 }

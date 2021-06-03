@@ -9488,7 +9488,7 @@
         }
         __dragStart(evt) {
             evt.preventDefault();
-            this.startDrag();
+            this.startDrag(evt.input.pointerId);
         }
     }
 
@@ -16964,6 +16964,8 @@
             return ret;
         }
         addPointerMonitor(pointerId, target) {
+            if (pointerId == null || pointerId == -1)
+                pointerId = this._lastPointerId;
             let pointer = this.getPointer(pointerId);
             if (pointer.captors.indexOf(target) == -1)
                 pointer.captors.push(target);

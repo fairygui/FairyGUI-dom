@@ -9503,7 +9503,7 @@ class GWindow extends GComponent {
     }
     __dragStart(evt) {
         evt.preventDefault();
-        this.startDrag();
+        this.startDrag(evt.input.pointerId);
     }
 }
 
@@ -16979,6 +16979,8 @@ class Stage extends UIElement {
         return ret;
     }
     addPointerMonitor(pointerId, target) {
+        if (pointerId == null || pointerId == -1)
+            pointerId = this._lastPointerId;
         let pointer = this.getPointer(pointerId);
         if (pointer.captors.indexOf(target) == -1)
             pointer.captors.push(target);
