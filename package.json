@@ -1,6 +1,6 @@
 {
   "name": "fairygui-dom",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "A GUI Editor & framework for DOM",
   "main": "dist/fairygui.js",
   "module": "dist/fairygui.module.js",

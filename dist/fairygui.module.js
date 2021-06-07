@@ -6438,7 +6438,7 @@ class ScrollPane {
     __mouseWheel(evt) {
         if (!this._mouseWheelEnabled)
             return;
-        var delta = evt.input.mouseWheelDelta / window.devicePixelRatio;
+        var delta = evt.input.mouseWheelDelta / 10;
         if (this._snapToItem && Math.abs(delta) < 1)
             delta = Math.sign(delta);
         if (this._overlapSize.x > 0 && this._overlapSize.y == 0) {
