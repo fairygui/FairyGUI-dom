@@ -26,7 +26,6 @@ export class InputTextField extends UIElement {
 
     public init() {
         super.init();
-
         this.createElement();
 
         this.$owner.on("focus_in", () => {
@@ -83,10 +82,15 @@ export class InputTextField extends UIElement {
             e = document.createElement("textarea");
         }
         this._input = e;
+        if (e instanceof HTMLInputElement) {
+            if (this._password)
+                e.type = "password";
+            else
+                e.type = "text";
+        }
         e.value = this._text;
-        if (this._password && (e instanceof HTMLInputElement))
-            e.type = "password";
         e.readOnly = old ? old.readOnly : false;
+        e.spellcheck = false;
         e.onfocus = () => { this.stage.setFocus(this); };
         this.appendChild(this._input);
     }

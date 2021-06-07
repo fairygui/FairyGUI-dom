@@ -39,7 +39,6 @@ export class TextField extends UIElement {
         this._span.style.position = "absolute";
         this._span.style.padding = "2px";
         this._span.style.boxSizing = "border-box";
-        this._span.style.userSelect = "none";
         this.appendChild(this._span);
     }
 

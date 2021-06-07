@@ -16,6 +16,7 @@ const maxPointer = 10;
 export class Stage extends UIElement implements IStage {
     private _window: Window;
     private _touchscreen: boolean;
+    private _electron: boolean;
     private _pointers: Array<PointerInfo> = [];
     private _touchTarget: UIElement;
     private _pointerPos: Vec2 = new Vec2();
@@ -46,6 +47,8 @@ export class Stage extends UIElement implements IStage {
             (navigator.maxTouchPoints > 0) ||
             (navigator.msMaxTouchPoints > 0);
 
+        this._electron = window && window.process && window.process.versions['electron'] != undefined;
+
         for (let i = 0; i < maxPointer; i++)
             this._pointers.push(new PointerInfo());
 
@@ -53,7 +56,7 @@ export class Stage extends UIElement implements IStage {
         doc.addEventListener('pointerup', ev => this.handlePointer(ev, 1), { passive: false });
         doc.addEventListener('pointermove', ev => this.handlePointer(ev, 2), { passive: false });
         doc.addEventListener('pointercancel', ev => this.handlePointer(ev, 3), { passive: false });
-        doc.addEventListener('contextmenu', ev => ev.preventDefault());
+        doc.addEventListener('contextmenu', ev => this.handleContextMenu(ev));
 
         doc.addEventListener('dragend', ev => this.handlePointer(ev, 1), { passive: false });
         doc.addEventListener('dragover', ev => this.handlePointer(ev, 2), { passive: false });
@@ -64,7 +67,18 @@ export class Stage extends UIElement implements IStage {
             .fgui-link { color:#3A67CC }
             .fgui-link:hover { color:#3A67CC }
 
-            fgui-input {
+            .fgui-stage {
+                -moz-user-select: none;
+                -khtml-user-select: none;
+                -webkit-user-select: none; 
+                -ms-user-select:none;
+            }
+
+            .fgui-stage div:focus {
+                outline: none;
+            }
+
+            .fgui-stage input[type=text] {
                 resize : none;
                 overflow : scroll;
                 outline : none;
@@ -77,15 +91,33 @@ export class Stage extends UIElement implements IStage {
                 height : 100%;
             }
 
-            fgui-input textarea::-webkit-scrollbar {
-                display: none;
+            .fgui-stage input[type=text]:focus {
+                outline: none;
             }
 
-            div:focus {
+            .fgui-stage textarea {
+                resize : none;
+                overflow : scroll;
+                outline : none;
+                border : 0px;
+                padding : 0px;
+                margin : 0px;
+                position : absolute;
+                background : transparent;
+                width : 100%;
+                height : 100%;
+            }
+
+            .fgui-stage textarea:focus {
                 outline: none;
+            }
+
+            .fgui-stage textarea::-webkit-scrollbar {
+                display: none;
             }
         </style>`
         );
+        this.className = "fgui-stage";
 
         ownerWindow.addEventListener('keydown', this.onKeydown.bind(this));
         ownerWindow.addEventListener('keyup', this.onKeyup.bind(this));
@@ -433,6 +465,14 @@ export class Stage extends UIElement implements IStage {
         this.setLastPointer(pointer);
         this._touchTarget.bubbleEvent("mouse_wheel");
         pointer.mouseWheelDelta = 0;
+    }
+
+    private handleContextMenu(ev: Event) {
+        let isInput = (ev.target instanceof HTMLInputElement) && (ev.target.type == "text" || ev.target.type == "password")
+            || (ev.target instanceof HTMLTextAreaElement);
+
+        if (this._electron || !isInput)
+            ev.preventDefault();
     }
 
     private getPointer(pointerId: number): PointerInfo {
