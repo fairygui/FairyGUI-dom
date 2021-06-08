@@ -1,3 +1,4 @@
+import '@ungap/custom-elements';
 import * as fgui from "../../build/FairyGUI";
 
 async function start() {
