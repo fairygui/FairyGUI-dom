@@ -829,7 +829,13 @@ export class ScrollPane {
 
         this.updateScrollBarVisible();
 
-        this._maskContainer.setSize(this._viewSize.x, this._viewSize.y);
+        let mw: number = this._viewSize.x;
+        let mh: number = this._viewSize.y;
+        if (this._vScrollNone && this._vtScrollBar != null)
+            mw += this._vtScrollBar.width;
+        if (this._hScrollNone && this._hzScrollBar != null)
+            mh += this._hzScrollBar.height;
+        this._maskContainer.setSize(mw, mh);
 
         if (this._scrollType == ScrollType.Horizontal || this._scrollType == ScrollType.Both)
             this._overlapSize.x = Math.ceil(Math.max(0, this._contentSize.x - this._viewSize.x));
@@ -1273,7 +1279,7 @@ export class ScrollPane {
         if (!this._mouseWheelEnabled)
             return;
 
-        var delta: number = evt.input.mouseWheelDelta / 10;
+        var delta: number = evt.input.mouseWheelDelta;
         if (this._snapToItem && Math.abs(delta) < 1)
             delta = Math.sign(delta);
 

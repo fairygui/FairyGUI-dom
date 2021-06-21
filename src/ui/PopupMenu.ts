@@ -6,6 +6,7 @@ import { GComponent } from "./GComponent";
 import { GList } from "./GList";
 import { GObject } from "./GObject";
 import { GRoot } from "./GRoot";
+import { GTextField } from "./GTextField";
 import { UIConfig } from "./UIConfig";
 import { UIPackage } from "./UIPackage";
 
@@ -201,7 +202,7 @@ export class PopupMenu {
                 if (obj == null)
                     continue;
                 let tf = obj.getTextField();
-                if (tf != null) {
+                if (tf instanceof GTextField) {
                     let v = tf.textWidth - tf.width;
                     if (v > maxDelta)
                         maxDelta = v;

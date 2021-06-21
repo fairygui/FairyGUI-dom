@@ -48,7 +48,7 @@ export class GLabel extends GComponent {
     }
 
     public get titleColor(): number {
-        var tf: GTextField = this.getTextField();
+        var tf = this.getTextField();
         if (tf)
             return tf.color;
         else
@@ -56,14 +56,14 @@ export class GLabel extends GComponent {
     }
 
     public set titleColor(value: number) {
-        var tf: GTextField = this.getTextField();
+        var tf = this.getTextField();
         if (tf)
             tf.color = value;
         this.updateGear(4);
     }
 
     public get titleFontSize(): number {
-        var tf: GTextField = this.getTextField();
+        var tf = this.getTextField();
         if (tf)
             return tf.textFormat.size;
         else
@@ -71,7 +71,7 @@ export class GLabel extends GComponent {
     }
 
     public set titleFontSize(value: number) {
-        var tf: GTextField = this.getTextField();
+        var tf = this.getTextField();
         if (tf) {
             tf.textFormat.size = value;
             tf.applyFormat();
@@ -98,8 +98,8 @@ export class GLabel extends GComponent {
             return false;
     }
 
-    public getTextField(): GTextField {
-        if (this._titleObject instanceof GTextField)
+    public getTextField(): GTextField | GTextInput {
+        if ((this._titleObject instanceof GTextField) || (this._titleObject instanceof GTextInput))
             return this._titleObject;
         else if ('getTextField' in this._titleObject)
             return (<any>this._titleObject).getTextField();
@@ -113,7 +113,7 @@ export class GLabel extends GComponent {
                 return this.titleColor;
             case ObjectPropID.OutlineColor:
                 {
-                    var tf: GTextField = this.getTextField();
+                    let tf = this.getTextField();
                     if (tf)
                         return tf.textFormat.outlineColor;
                     else
@@ -133,7 +133,7 @@ export class GLabel extends GComponent {
                 break;
             case ObjectPropID.OutlineColor:
                 {
-                    var tf: GTextField = this.getTextField();
+                    let tf = this.getTextField();
                     if (tf) {
                         tf.textFormat.outlineColor = value;
                         tf.applyFormat();
@@ -177,7 +177,7 @@ export class GLabel extends GComponent {
             this.titleFontSize = iv;
 
         if (buffer.readBool()) {
-            var input: GTextField = this.getTextField();
+            let input = this.getTextField();
             if (input instanceof GTextInput) {
                 str = buffer.readS();
                 if (str != null)

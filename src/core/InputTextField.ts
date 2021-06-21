@@ -6,6 +6,8 @@ import { UIConfig } from "../ui/UIConfig";
 
 type InputElement = HTMLTextAreaElement | HTMLInputElement;
 
+export var isAnyEditing: boolean = false;
+
 export class InputTextField extends UIElement {
     protected _promptText: string;
     protected _textFormat: TextFormat;
@@ -20,6 +22,7 @@ export class InputTextField extends UIElement {
 
         this._textFormat = new TextFormat();
         this._text = "";
+        this._cursor = "auto";
 
         this._singleLine = true;
     }
@@ -91,7 +94,9 @@ export class InputTextField extends UIElement {
         e.value = this._text;
         e.readOnly = old ? old.readOnly : false;
         e.spellcheck = false;
-        e.onfocus = () => { this.stage.setFocus(this); };
+        e.addEventListener("focus", () => { isAnyEditing = true; this.stage.setFocus(this); });
+        e.addEventListener("blur", () => { isAnyEditing = false; });
+        e.addEventListener("input", () => { this.$owner.emit("changed"); });
         this.appendChild(this._input);
     }
 

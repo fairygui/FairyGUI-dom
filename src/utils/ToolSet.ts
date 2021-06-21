@@ -1,38 +1,12 @@
+import { Color } from "../math/Color";
+
 export type Constructor<T = {}> = new (...args: any[]) => T;
 
-export function convertToHtmlColor(argb: number, hasAlpha?: boolean): string {
-    var alpha: string;
-    if (hasAlpha)
-        alpha = (argb >> 24 & 0xFF).toString(16);
-    else
-        alpha = "";
-    var red: string = (argb >> 16 & 0xFF).toString(16);
-    var green: string = (argb >> 8 & 0xFF).toString(16);
-    var blue: string = (argb & 0xFF).toString(16);
-    if (alpha.length == 1)
-        alpha = "0" + alpha;
-    if (red.length == 1)
-        red = "0" + red;
-    if (green.length == 1)
-        green = "0" + green;
-    if (blue.length == 1)
-        blue = "0" + blue;
-    return "#" + alpha + red + green + blue;
-}
+const s_color = new Color();
 
-export function convertFromHtmlColor(str: string, hasAlpha?: boolean): number {
-    if (str.length < 1)
-        return 0;
-
-    if (str.charAt(0) == "#")
-        str = str.substr(1);
-
-    if (str.length == 8)
-        return (parseInt(str.substr(0, 2), 16) << 24) + parseInt(str.substr(2), 16);
-    else if (hasAlpha)
-        return 0xFF000000 + parseInt(str, 16);
-    else
-        return parseInt(str, 16);
+export function convertToHtmlColor(rgb: number): string {
+    s_color.setRGB(rgb);
+    return s_color.toStyleString();
 }
 
 export function clamp(value: number, min: number, max: number): number {

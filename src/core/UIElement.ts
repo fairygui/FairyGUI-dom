@@ -31,7 +31,9 @@ export class UIElement extends HTMLDivElement {
     protected _tabStop?: boolean;
     protected _tabStopChildren?: boolean;
 
+    /** @internal */
     public _lastFocus: UIElement;
+    /** @internal */
     public _isRoot: boolean;
 
     private _timerID: number = 0;
@@ -530,6 +532,7 @@ export class UIElement extends HTMLDivElement {
         let ev = EventPool.borrow();
         ev._type = type;
         ev.data = data;
+        ev._initiator = this;
         let arr = ev._callChain;
 
         this.traverseVisible(obj => {
@@ -545,11 +548,11 @@ export class UIElement extends HTMLDivElement {
         EventPool.returns(ev);
     }
 
-    public bubbleEvent(type: string, data?: any, addChain?: Array<EventDispatcher>): void {
+    public bubbleEvent(initiator: HTMLElement, type: string, data?: any, addChain?: Array<EventDispatcher>): void {
         let ev = EventPool.borrow();
         ev._type = type;
         ev.data = data;
-        ev._initiator = this;
+        ev._initiator = initiator;
         let arr = ev._callChain;
 
         if (this.$owner)

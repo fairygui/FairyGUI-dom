@@ -52,6 +52,7 @@ export class GRoot extends GComponent {
         this._justClosedPopups = [];
 
         this.on("pointer_down", this.__elementTouchBegin, this, true);
+        ownerWindow.addEventListener("blur", () => this.checkPopups());
 
         this._modalLayer = new GGraph();
         this._modalLayer.setSize(this.width, this.height);

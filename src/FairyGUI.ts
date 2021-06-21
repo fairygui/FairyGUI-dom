@@ -51,8 +51,9 @@ export { GTweener } from "./tween/GTweener";
 export { EaseType } from "./tween/EaseType";
 
 export { UBBParser } from "./utils/UBBParser";
-export { ByteBuffer } from "./utils/ByteBuffer";
+export { ByteBuffer } from "./utils/ByteBuffer";;
 export { Constructor } from "./utils/ToolSet"
+export { Pool } from "./utils/Pool";
 
 export { Color } from "./math/Color"
 export { Margin } from "./math/Margin"

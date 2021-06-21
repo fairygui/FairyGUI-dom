@@ -16,7 +16,9 @@ export class GTree extends GList {
     private _indent: number;
     private _clickToExpand: number;
     private _rootNode: GTreeNode;
-    private _expandedStatusInEvt: boolean;
+
+    /** @internal */
+    public _expandedStatusInEvt: boolean;
 
     constructor() {
         super();
@@ -77,17 +79,17 @@ export class GTree extends GList {
             parentNode = parentNode.parent;
         }
 
-        if (!node._cell)
+        if (!node.cell)
             return;
 
-        this.addSelection(this.getChildIndex(node._cell), scrollItToView);
+        this.addSelection(this.getChildIndex(node.cell), scrollItToView);
     }
 
     public unselectNode(node: GTreeNode): void {
-        if (!node._cell)
+        if (!node.cell)
             return;
 
-        this.removeSelection(this.getChildIndex(node._cell));
+        this.removeSelection(this.getChildIndex(node.cell));
     }
 
     public expandAll(folderNode?: GTreeNode): void {
@@ -118,44 +120,21 @@ export class GTree extends GList {
     }
 
     private createCell(node: GTreeNode): void {
-        var child: GComponent = <GComponent>this.getFromPool(node._resURL ? node._resURL : this.defaultItem);
-        if (!child)
-            throw new Error("cannot create tree node object.");
-
-        child._treeNode = node;
-        node._cell = child;
-
-        var indentObj: GObject = child.getChild("indent");
-        if (indentObj)
-            indentObj.width = (node.level - 1) * this._indent;
-
-        var cc: Controller;
-
-        cc = child.getController("expanded");
-        if (cc) {
-            cc.on("status_changed", this.__expandedStateChanged, this);
-            cc.selectedIndex = node.expanded ? 1 : 0;
-        }
-
-        cc = child.getController("leaf");
-        if (cc)
-            cc.selectedIndex = node.isFolder ? 0 : 1;
-
-        if (node.isFolder)
-            child.on("pointer_down", this.__cellMouseDown, this);
+        node.createCell();
 
         if (this.treeNodeRender)
-            this.treeNodeRender(node, child);
+            this.treeNodeRender(node, node.cell);
     }
 
+    /** @internal */
     public _afterInserted(node: GTreeNode): void {
-        if (!node._cell)
+        if (!node.cell)
             this.createCell(node);
 
         var index: number = this.getInsertIndexForNode(node);
-        this.addChildAt(node._cell, index);
+        this.addChildAt(node.cell, index);
         if (this.treeNodeRender)
-            this.treeNodeRender(node, node._cell);
+            this.treeNodeRender(node, node.cell);
 
         if (node.isFolder && node.expanded)
             this.checkChildren(node, index);
@@ -165,7 +144,7 @@ export class GTree extends GList {
         var prevNode: GTreeNode = node.getPrevSibling();
         if (prevNode == null)
             prevNode = node.parent;
-        var insertIndex: number = this.getChildIndex(prevNode._cell) + 1;
+        var insertIndex: number = this.getChildIndex(prevNode.cell) + 1;
         var myLevel: number = node.level;
         var cnt: number = this.numChildren;
         for (var i: number = insertIndex; i < cnt; i++) {
@@ -179,10 +158,12 @@ export class GTree extends GList {
         return insertIndex;
     }
 
+    /** @internal */
     public _afterRemoved(node: GTreeNode): void {
         this.removeNode(node);
     }
 
+    /** @internal */
     public _afterExpanded(node: GTreeNode): void {
         if (node == this._rootNode) {
             this.checkChildren(this._rootNode, 0);
@@ -192,20 +173,24 @@ export class GTree extends GList {
         if (this.treeNodeWillExpand)
             this.treeNodeWillExpand(node, true);
 
-        if (node._cell == null)
+        if (node.onExpanded)
+            node.onExpanded();
+
+        if (node.cell == null)
             return;
 
         if (this.treeNodeRender)
-            this.treeNodeRender(node, node._cell);
+            this.treeNodeRender(node, node.cell);
 
-        var cc: Controller = node._cell.getController("expanded");
+        var cc: Controller = node.cell.getController("expanded");
         if (cc)
             cc.selectedIndex = 1;
 
-        if (node._cell.parent)
-            this.checkChildren(node, this.getChildIndex(node._cell));
+        if (node.cell.parent)
+            this.checkChildren(node, this.getChildIndex(node.cell));
     }
 
+    /** @internal */
     public _afterCollapsed(node: GTreeNode): void {
         if (node == this._rootNode) {
             this.checkChildren(this._rootNode, 0);
@@ -215,22 +200,23 @@ export class GTree extends GList {
         if (this.treeNodeWillExpand)
             this.treeNodeWillExpand(node, false);
 
-        if (node._cell == null)
+        if (node.cell == null)
             return;
 
         if (this.treeNodeRender)
-            this.treeNodeRender(node, node._cell);
+            this.treeNodeRender(node, node.cell);
 
-        var cc: Controller = node._cell.getController("expanded");
+        var cc: Controller = node.cell.getController("expanded");
         if (cc)
             cc.selectedIndex = 0;
 
-        if (node._cell.parent)
+        if (node.cell.parent)
             this.hideFolderNode(node);
     }
 
+    /** @internal */
     public _afterMoved(node: GTreeNode): void {
-        var startIndex: number = this.getChildIndex(node._cell);
+        var startIndex: number = this.getChildIndex(node.cell);
         var endIndex: number;
         if (node.isFolder)
             endIndex = this.getFolderEndIndex(startIndex, node.level);
@@ -270,11 +256,11 @@ export class GTree extends GList {
         for (var i: number = 0; i < cnt; i++) {
             index++;
             var node: GTreeNode = folderNode.getChildAt(i);
-            if (node._cell == null)
+            if (node.cell == null)
                 this.createCell(node);
 
-            if (!node._cell.parent)
-                this.addChildAt(node._cell, index);
+            if (!node.cell.parent)
+                this.addChildAt(node.cell, index);
 
             if (node.isFolder && node.expanded)
                 index = this.checkChildren(node, index);
@@ -287,20 +273,21 @@ export class GTree extends GList {
         var cnt: number = folderNode.numChildren;
         for (var i: number = 0; i < cnt; i++) {
             var node: GTreeNode = folderNode.getChildAt(i);
-            if (node._cell)
-                this.removeChild(node._cell);
+            if (node.cell)
+                this.removeChild(node.cell);
             if (node.isFolder && node.expanded)
                 this.hideFolderNode(node);
         }
     }
 
     private removeNode(node: GTreeNode): void {
-        if (node._cell) {
-            if (node._cell.parent)
-                this.removeChild(node._cell);
-            this.returnToPool(node._cell);
-            node._cell._treeNode = null;
-            node._cell = null;
+        if (node.cell) {
+            if (node.cell.parent)
+                this.removeChild(node.cell);
+            if (node._cellFromPool) {
+                this.returnToPool(node.cell);
+                node.cell = null;
+            }
         }
 
         if (node.isFolder) {
@@ -310,17 +297,6 @@ export class GTree extends GList {
                 this.removeNode(node2);
             }
         }
-    }
-
-    private __cellMouseDown(evt: Event): void {
-        var node: GTreeNode = evt.sender._treeNode;
-        this._expandedStatusInEvt = node.expanded;
-    }
-
-    private __expandedStateChanged(evt: Event): void {
-        let cc: Controller = <Controller>evt.target;
-        var node: GTreeNode = cc.parent._treeNode;
-        node.expanded = cc.selectedIndex == 1;
     }
 
     protected dispatchItemEvent(item: GObject, evt: Event): void {

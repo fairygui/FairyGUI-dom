@@ -1,4 +1,4 @@
-import { convertFromHtmlColor } from "../ToolSet";
+import { Color } from "../../math/Color";
 
 export class XMLUtils {
     public static decodeString(aSource: string): string {
@@ -137,9 +137,12 @@ export class XMLUtils {
         if (value == null || value.length == 0)
             return defValue == null ? 0 : defValue;
 
-        return convertFromHtmlColor(value);
+        s_color.parseHexString(value);
+        return s_color.getHex();
     }
 }
+
+let s_color: Color = new Color();
 
 const ESCAPES: Array<string> = [
     "&", "&amp;",

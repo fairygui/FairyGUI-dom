@@ -4,7 +4,7 @@ import { lastInput } from "../event/Event";
 import { EventDispatcher } from "../event/EventDispatcher";
 import { Vec2 } from "../math/Vec2";
 import { TextField } from "./TextField";
-import { InputTextField } from "./InputTextField";
+import { InputTextField, isAnyEditing } from "./InputTextField";
 import { Shape } from "./Shape";
 import { Image } from "./Image";
 import { MovieClip } from "./MovieClip";
@@ -12,6 +12,8 @@ import { IStage } from "./IStage";
 
 const clickTestThreshold = 10;
 const maxPointer = 10;
+
+var anyPointerInput: number = 0;
 
 export class Stage extends UIElement implements IStage {
     private _window: Window;
@@ -30,6 +32,10 @@ export class Stage extends UIElement implements IStage {
     private _focusOutChain: Array<UIElement> = [];
     private _focusInChain: Array<UIElement> = [];
     private _focusHistory: Array<UIElement> = [];
+
+    public static get anyInput(): boolean {
+        return anyPointerInput > 0 || isAnyEditing;
+    }
 
     public constructor() {
         super();
@@ -83,7 +89,6 @@ export class Stage extends UIElement implements IStage {
                 overflow : scroll;
                 outline : none;
                 border : 0px;
-                padding : 0px;
                 margin : 0px;
                 position : absolute;
                 background : transparent;
@@ -92,7 +97,7 @@ export class Stage extends UIElement implements IStage {
             }
 
             .fgui-stage input[type=text]:focus {
-                outline: none;
+                outline : none;
             }
 
             .fgui-stage textarea {
@@ -100,7 +105,7 @@ export class Stage extends UIElement implements IStage {
                 overflow : scroll;
                 outline : none;
                 border : 0px;
-                padding : 0px;
+                padding : 0px 4px 0px 4px;
                 margin : 0px;
                 position : absolute;
                 background : transparent;
@@ -181,16 +186,15 @@ export class Stage extends UIElement implements IStage {
         let pointer: PointerInfo = this.getPointer(pointerId);
         if (pointer.captors.indexOf(target) == -1)
             pointer.captors.push(target);
-
-        this.setPointerCapture(pointerId);
     }
 
     public removePointerMonitor(target: EventDispatcher) {
         for (let j = 0; j < maxPointer; j++) {
             let pointer = this._pointers[j];
             let i = pointer.captors.indexOf(target);
-            if (i != -1)
+            if (i != -1) {
                 pointer.captors[i] = null;
+            }
         }
     }
 
@@ -208,18 +212,18 @@ export class Stage extends UIElement implements IStage {
         this.setLastInput(ev);
         let f = this.focusedElement;
         if (f)
-            f.bubbleEvent("key_down");
+            f.bubbleEvent(f, "key_down");
         else
-            this.$owner.emit("key_down");
+            this.bubbleEvent(this, "key_down");
     }
 
     private onKeyup(ev: KeyboardEvent) {
         this.setLastInput(ev);
         let f = this.focusedElement;
         if (f)
-            f.bubbleEvent("key_up");
+            f.bubbleEvent(f, "key_up");
         else
-            this.$owner.emit("key_up");
+            this.bubbleEvent(this, "key_up");
     }
 
     private setLastInput(ev: KeyboardEvent) {
@@ -229,6 +233,10 @@ export class Stage extends UIElement implements IStage {
         lastInput.commandKey = ev.metaKey;
         lastInput.keyCode = ev.code;
         lastInput.key = ev.key;
+        lastInput.button = 0;
+        lastInput.holdTime = 0;
+        lastInput.clickCount = 0;
+        lastInput.mouseWheelDelta = 0;
     }
 
     //Mouse/Touch Handle -----------------
@@ -294,7 +302,7 @@ export class Stage extends UIElement implements IStage {
                         pointer.captors[i] = null;
                 }
 
-                this.bubbleEvent("pointer_move", null, pointer.captors);
+                this.bubbleEvent(<HTMLElement>ev.target, "pointer_move", null, pointer.captors);
             }
             else
                 this.$owner.emit("pointer_move");
@@ -306,6 +314,7 @@ export class Stage extends UIElement implements IStage {
         if (type == 0) {
             if (!pointer.began) {
                 this._touchCount++;
+                anyPointerInput++;
                 pointer.began = true;
                 pointer.clickCancelled = false;
                 pointer.downX = pointer.x;
@@ -326,15 +335,13 @@ export class Stage extends UIElement implements IStage {
                 this.setFocus(pointer.target);
                 this.setLastPointer(pointer);
 
-                pointer.target.bubbleEvent("pointer_down");
+                pointer.target.bubbleEvent(<HTMLElement>ev.target, "pointer_down", <HTMLElement>ev.target);
             }
         }
         else if (type == 1 || type == 3) {
             if (pointer.began) {
                 this._touchCount--;
-
-                if (pointer.captors.length > 0)
-                    this.releasePointerCapture(pointer.pointerId);
+                anyPointerInput--;
 
                 pointer.began = false;
                 let now = performance.now();
@@ -375,29 +382,32 @@ export class Stage extends UIElement implements IStage {
                     let len = pointer.captors.length;
                     for (let i = 0; i < len; i++) {
                         let e = pointer.captors[i];
-                        if ((e instanceof UIElement) && !e.onStage)
-                            pointer.captors[i] = null;
+                        if (e instanceof UIElement) {
+                            if (!e.onStage)
+                                pointer.captors[i] = null;
+                        }
                     }
-                    bubbleFrom.bubbleEvent("pointer_up", null, pointer.captors);
+                    bubbleFrom.bubbleEvent(<HTMLElement>ev.target, "pointer_up", null, pointer.captors);
 
                     pointer.captors.length = 0;
                 }
                 else
-                    bubbleFrom.bubbleEvent("pointer_up");
+                    bubbleFrom.bubbleEvent(<HTMLElement>ev.target, "pointer_up");
 
                 if (type != 3) {
                     let clickTarget = this.clickTest(pointer);
                     if (clickTarget) {
                         this.setLastPointer(pointer);
                         if (ev.button == 1 || ev.button == 2)
-                            clickTarget.bubbleEvent("right_click");
+                            clickTarget.bubbleEvent(<HTMLElement>ev.target, "right_click");
                         else
-                            clickTarget.bubbleEvent("click");
+                            clickTarget.bubbleEvent(<HTMLElement>ev.target, "click");
                     }
                 }
 
                 pointer.button = -1;
 
+                //on touch device, trigger rollout on pointer up
                 if ((<PointerEvent>ev).pointerType != "mouse") {
                     pointer.target = null;
                     this.handleRollOver(pointer);
@@ -461,9 +471,9 @@ export class Stage extends UIElement implements IStage {
         pointer.altKey = ev.altKey;
         pointer.ctrlKey = ev.ctrlKey;
         pointer.commandKey = ev.metaKey;
-        pointer.mouseWheelDelta = ev.deltaY;
+        pointer.mouseWheelDelta = ev.deltaY / 20;
         this.setLastPointer(pointer);
-        this._touchTarget.bubbleEvent("mouse_wheel");
+        this._touchTarget.bubbleEvent(<HTMLElement>ev.target, "mouse_wheel");
         pointer.mouseWheelDelta = 0;
     }
 
@@ -519,14 +529,15 @@ export class Stage extends UIElement implements IStage {
             this._rollOutChain.length = 0;
         }
 
-        let cursor: string;
+        let cursor: string = null;
         cnt = this._rollOverChain.length;
         if (cnt > 0) {
             for (let i = 0; i < cnt; i++) {
                 let obj = this._rollOverChain[i];
                 if (obj.onStage && obj.$owner) {
                     obj.$owner.emit("roll_over");
-                    cursor = obj.cursor;
+                    if (cursor == null && obj.cursor)
+                        cursor = obj.cursor;
                 }
             }
             this._rollOverChain.length = 0;
@@ -567,7 +578,7 @@ export class Stage extends UIElement implements IStage {
         let e: HTMLElement = <HTMLElement>event.currentTarget;
         while (e) {
             if (e instanceof UIElement) {
-                e.bubbleEvent("click_link", href);
+                e.bubbleEvent(e, "click_link", href);
                 break;
             }
             e = e.parentElement;
@@ -675,6 +686,9 @@ export class Stage extends UIElement implements IStage {
             }
             this._focusInChain.length = 0;
         }
+
+        if (newFocus instanceof InputTextField)
+            this.style.cursor = "auto";
     }
 
     private onFocusRemoving(sender: UIElement) {

@@ -10,6 +10,7 @@ import { UIPackage } from "./UIPackage";
 import { ByteBuffer } from "../utils/ByteBuffer";
 import { Event } from "../event/Event";
 import { InputTextField } from "../core/InputTextField";
+import { GTextInput } from "./GTextInput";
 
 export class GComboBox extends GComponent {
     public dropdown: GComponent;
@@ -56,7 +57,7 @@ export class GComboBox extends GComponent {
     }
 
     public get titleColor(): number {
-        var tf: GTextField = this.getTextField();
+        var tf = this.getTextField();
         if (tf)
             return tf.color;
         else
@@ -64,14 +65,14 @@ export class GComboBox extends GComponent {
     }
 
     public set titleColor(value: number) {
-        var tf: GTextField = this.getTextField();
+        var tf = this.getTextField();
         if (tf)
             tf.color = value;
         this.updateGear(4);
     }
 
     public get titleFontSize(): number {
-        var tf: GTextField = this.getTextField();
+        var tf = this.getTextField();
         if (tf)
             return tf.textFormat.size;
         else
@@ -79,7 +80,7 @@ export class GComboBox extends GComponent {
     }
 
     public set titleFontSize(value: number) {
-        var tf: GTextField = this.getTextField();
+        var tf = this.getTextField();
         if (tf) {
             tf.textFormat.size = value;
             tf.applyFormat();
@@ -182,8 +183,8 @@ export class GComboBox extends GComponent {
         this.selectedIndex = index;
     }
 
-    public getTextField(): GTextField {
-        if (this._titleObject instanceof GTextField)
+    public getTextField(): GTextField | GTextInput {
+        if ((this._titleObject instanceof GTextField) || (this._titleObject instanceof GTextInput))
             return this._titleObject;
         else if ('getTextField' in this._titleObject)
             return <GTextField>(<any>this._titleObject).getTextField();
@@ -246,7 +247,7 @@ export class GComboBox extends GComponent {
                 return this.titleColor;
             case ObjectPropID.OutlineColor:
                 {
-                    var tf: GTextField = this.getTextField();
+                    let tf = this.getTextField();
                     if (tf)
                         return tf.textFormat.outlineColor;
                     else
@@ -254,7 +255,7 @@ export class GComboBox extends GComponent {
                 }
             case ObjectPropID.FontSize:
                 {
-                    tf = this.getTextField();
+                    let tf = this.getTextField();
                     if (tf)
                         return tf.textFormat.size;
                     else
@@ -272,7 +273,7 @@ export class GComboBox extends GComponent {
                 break;
             case ObjectPropID.OutlineColor:
                 {
-                    var tf: GTextField = this.getTextField();
+                    let tf = this.getTextField();
                     if (tf) {
                         tf.textFormat.outlineColor = value;
                         tf.applyFormat();
@@ -281,7 +282,7 @@ export class GComboBox extends GComponent {
                 break;
             case ObjectPropID.FontSize:
                 {
-                    tf = this.getTextField();
+                    let tf = this.getTextField();
                     if (tf) {
                         tf.textFormat.size = value;
                         tf.applyFormat();
@@ -440,7 +441,7 @@ export class GComboBox extends GComponent {
     }
 
     private __mousedown(evt: Event): void {
-        if (evt.initiator instanceof InputTextField)
+        if (evt.initiator.tagName == "INPUT" || evt.initiator.tagName == "TEXTAREA")
             return;
 
         this._down = true;

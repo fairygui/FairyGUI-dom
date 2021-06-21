@@ -32,12 +32,12 @@ export class Shape extends UIElement {
     public drawRect(lineWidth: number, lineColor: Color, fillColor: Color) {
         this._type = 1;
         if (lineColor.a != 0)
-            this.style.border = lineWidth + "px solid " + lineColor.getHexString();
+            this.style.border = lineWidth + "px solid " + lineColor.toStyleString();
         else
             this.style.border = "";
         this._color = fillColor.getHex();
         if (fillColor.a != 0)
-            this.style.backgroundColor = fillColor.getHexString();
+            this.style.backgroundColor = fillColor.toStyleString();
         else
             this.style.backgroundColor = "transparent";
         this.onSizeChanged();
@@ -46,11 +46,11 @@ export class Shape extends UIElement {
     public drawRoundRect(lineWidth: number, lineColor: Color, fillColor: Color,
         topLeftRadius: number, topRightRadius: number, bottomLeftRadius: number, bottomRightRadius: number) {
         this._type = 2;
-        this.style.border = lineWidth + "px solid " + lineColor.getHexString();
+        this.style.border = lineWidth + "px solid " + lineColor.toStyleString();
         this.style.borderRadius = topLeftRadius + "px " + topRightRadius + "px " + bottomRightRadius + "px " + bottomLeftRadius + "px";
         this._color = fillColor.getHex();
         if (fillColor.a != 0)
-            this.style.backgroundColor = fillColor.getHexString();
+            this.style.backgroundColor = fillColor.toStyleString();
         else
             this.style.backgroundColor = "transparent";
         this.onSizeChanged();
@@ -58,11 +58,11 @@ export class Shape extends UIElement {
 
     public drawEllipse(lineWidth: number, lineColor: Color, fillColor: Color, startDegree?: number, endDegree?: number) {
         this._type = 3;
-        this.style.border = lineWidth + "px solid " + lineColor.getHexString();
+        this.style.border = lineWidth + "px solid " + lineColor.toStyleString();
         this.style.borderRadius = this._contentRect.width + "px / " + this._contentRect.height + "px";
         this._color = fillColor.getHex();
         if (fillColor.a != 0)
-            this.style.backgroundColor = fillColor.getHexString();
+            this.style.backgroundColor = fillColor.toStyleString();
         else
             this.style.backgroundColor = "transparent";
         this.onSizeChanged();

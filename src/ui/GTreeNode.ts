@@ -1,4 +1,7 @@
+import { Event } from "../event/Event";
+import { Controller } from "./Controller";
 import { GComponent } from "./GComponent";
+import { GObject } from "./GObject";
 import { GTree } from "./GTree";
 
 export class GTreeNode {
@@ -9,9 +12,14 @@ export class GTreeNode {
     private _expanded: boolean = false;
     private _level: number = 0;
     private _tree: GTree;
+    private _cell: GComponent;
+    private _indentObj: GObject;
+    private _resURL: string;
 
-    public _cell: GComponent;
-    public _resURL: string;
+    public onExpanded?: () => void;
+
+    /** @internal */
+    public _cellFromPool?: boolean;
 
     constructor(hasChild: boolean, resURL?: string) {
         this._resURL = resURL;
@@ -30,6 +38,12 @@ export class GTreeNode {
                     this._tree._afterExpanded(this);
                 else
                     this._tree._afterCollapsed(this);
+            }
+            else if (this._cell) {
+                let cc = this._cell.getController("expanded");
+                if (cc) {
+                    cc.selectedIndex = this.expanded ? 1 : 0;
+                }
             }
         }
     }
@@ -74,12 +88,50 @@ export class GTreeNode {
         return this._cell;
     }
 
-    public get level(): number {
-        return this._level;
+    public set cell(value: GComponent) {
+        if (this._cell)
+            this._cell._treeNode = null;
+
+        this._cell = value;
+        this._cellFromPool = false;
+        if (!this._cell)
+            return;
+
+        this._cell._treeNode = this;
+
+        this._indentObj = this._cell.getChild("indent");
+        if (this._tree && this._indentObj)
+            this._indentObj.width = (this._level - 1) * this._tree.indent;
+
+        var cc: Controller;
+        cc = this._cell.getController("expanded");
+        if (cc) {
+            cc.on("status_changed", this.__expandedStateChanged, this);
+            cc.selectedIndex = this.expanded ? 1 : 0;
+        }
+
+        cc = this._cell.getController("leaf");
+        if (cc)
+            cc.selectedIndex = this.isFolder ? 0 : 1;
+
+        if (this.isFolder)
+            this._cell.on("pointer_down", this.__cellMouseDown, this);
     }
 
-    public _setLevel(value: number): void {
-        this._level = value;
+    public createCell() {
+        if (this._cell)
+            return;
+
+        var child: GComponent = <GComponent>this._tree.getFromPool(this._resURL ? this._resURL : this._tree.defaultItem);
+        if (!child)
+            throw new Error("cannot create tree node object.");
+
+        this.cell = child;
+        this._cellFromPool = true;
+    }
+
+    public get level(): number {
+        return this._level;
     }
 
     public addChild(child: GTreeNode): GTreeNode {
@@ -230,6 +282,10 @@ export class GTreeNode {
         return this._children.length;
     }
 
+    public getChildren(): ReadonlyArray<GTreeNode> {
+        return this._children;
+    }
+
     public expandToRoot(): void {
         var p: GTreeNode = this;
         while (p) {
@@ -244,6 +300,10 @@ export class GTreeNode {
 
     public _setTree(value: GTree): void {
         this._tree = value;
+
+        if (this._tree && this._indentObj)
+            this._indentObj.width = (this._level - 1) * this._tree.indent;
+
         if (this._tree && this._tree.treeNodeWillExpand && this._expanded)
             this._tree.treeNodeWillExpand(this, true);
 
@@ -255,5 +315,15 @@ export class GTreeNode {
                 node._setTree(value);
             }
         }
+    }
+
+    private __expandedStateChanged(evt: Event): void {
+        let cc: Controller = <Controller>evt.target;
+        this.expanded = cc.selectedIndex == 1;
+    }
+
+    private __cellMouseDown(evt: Event): void {
+        if (this._tree)
+            this._tree._expandedStatusInEvt = this._expanded;
     }
 }

@@ -3,6 +3,7 @@ import { Event, EventPool, EventType } from "./Event";
 type Listeners = { dispatching?: number, callbacks: Array<any>, captures: Array<any> };
 
 export class EventDispatcher {
+    /** @internal */
     public _listeners: { [index: string]: Listeners };
 
     constructor() {
@@ -101,6 +102,7 @@ export class EventDispatcher {
         return ev._defaultPrevented;
     }
 
+    /** @internal */
     public _dispatch(col: Listeners, ev: Event, capture?: boolean): void {
         if (col.dispatching != 0)
             return;
@@ -130,6 +132,7 @@ export class EventDispatcher {
         col.dispatching = 0;
     }
 
+    /** @internal */
     public _dispatchDirect(type: string, ev: Event) {
         let col = this._listeners[type];
         if (col) {

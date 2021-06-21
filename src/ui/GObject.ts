@@ -66,16 +66,27 @@ export class GObject extends EventDispatcher {
     public initWidth: number = 0;
     public initHeight: number = 0;
 
+    /** @internal */
     public _parent: GComponent;
+    /** @internal */
     public _width: number = 0;
+    /** @internal */
     public _height: number = 0;
+    /** @internal */
     public _rawWidth: number = 0;
+    /** @internal */
     public _rawHeight: number = 0;
+    /** @internal */
     public _id: string;
+    /** @internal */
     public _name: string;
+    /** @internal */
     public _underConstruct: boolean;
+    /** @internal */
     public _gearLocked: boolean;
+    /** @internal */
     public _sizePercentInGroup: number = 0;
+    /** @internal */
     public _treeNode?: GTreeNode;
 
     constructor() {
@@ -693,7 +704,7 @@ export class GObject extends EventDispatcher {
     }
 
     public bubbleEvent(type: string, data?: any): void {
-        this._element.bubbleEvent(type, data);
+        this._element.bubbleEvent(this._element, type, data);
     }
 
     public get draggable(): boolean {
@@ -1047,6 +1058,12 @@ export class GObject extends EventDispatcher {
     }
 
     private __touchBegin(evt: Event): void {
+        let currentFocus = GRoot.inst.focus;
+        if (currentFocus && ('editable' in currentFocus) && currentFocus.editable) {
+            this._dragTesting = false;
+            return;
+        }
+
         if (this._dragStartPos == null)
             this._dragStartPos = new Vec2();
         this._dragStartPos.set(evt.input.x, evt.input.y);

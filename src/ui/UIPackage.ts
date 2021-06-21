@@ -5,6 +5,7 @@ import { ByteBuffer } from "../utils/ByteBuffer";
 import { HttpRequest } from "../utils/HttpRequest";
 import { Event } from "../event/Event";
 import { Margin } from "../math/Margin";
+import { Constructor } from "../utils/ToolSet";
 
 type PackageDependency = { id: string, name: string };
 
@@ -17,6 +18,8 @@ export class UIPackage {
     private _itemsByName: { [index: string]: PackageItem };
     private _dependencies: Array<PackageDependency>;
     private _branches: Array<string>;
+
+    /** @internal */
     public _branchIndex: number;
 
     public constructor() {
@@ -96,18 +99,18 @@ export class UIPackage {
             delete _instById[pkg._path];
     }
 
-    public static createObject(pkgName: string, resName: string, userClass?: new () => GObject): GObject {
+    public static createObject<T extends GObject>(pkgName: string, resName: string, userClass?: Constructor<T>): T {
         var pkg: UIPackage = UIPackage.getByName(pkgName);
         if (pkg)
-            return pkg.createObject(resName, userClass);
+            return <T>pkg.createObject(resName, userClass);
         else
             return null;
     }
 
-    public static createObjectFromURL(url: string, userClass?: new () => GObject): GObject {
+    public static createObjectFromURL<T extends GObject>(url: string, userClass?: Constructor<T>): T {
         var pi: PackageItem = UIPackage.getItemByURL(url);
         if (pi)
-            return pi.owner.internalCreateObject(pi, userClass);
+            return <T>pi.owner.internalCreateObject(pi, userClass);
         else
             return null;
     }
@@ -379,7 +382,6 @@ export class UIPackage {
     }
 
     public getItemAssetURL(item: PackageItem): string {
-
         return item.file;
     }
 }

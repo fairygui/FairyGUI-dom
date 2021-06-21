@@ -71,14 +71,21 @@ export const lastInput: InputInfo = {
 export class Event {
     public data: any = null;
 
+    /** @internal */ 
     public _defaultPrevented: boolean;
+    /** @internal */ 
     public _stopsPropagation: boolean;
+    /** @internal */ 
     public _pointerCapture: boolean;
+    /** @internal */ 
     public _callChain: Array<EventDispatcher> = [];
 
+    /** @internal */ 
     public _type: string;
+    /** @internal */ 
     public _target: EventDispatcher;
-    public _initiator: UIElement;
+    /** @internal */ 
+    public _initiator: HTMLElement;
 
     public constructor() {
     }
@@ -95,7 +102,7 @@ export class Event {
         return <GObject>this._target;
     }
 
-    public get initiator(): UIElement {
+    public get initiator(): HTMLElement {
         return this._initiator;
     }
 

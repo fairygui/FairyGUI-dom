@@ -7,7 +7,8 @@
     "strictNullChecks": false,
     "moduleResolution": "Node",
     "sourceMap": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "stripInternal": true
   },
   "include": [
     "./src/**/*"

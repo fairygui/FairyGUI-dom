@@ -11,6 +11,7 @@ import { ByteBuffer } from "../utils/ByteBuffer";
 import { GWindow } from "./GWindow";
 import { Timers } from "../utils/Timers";
 import { Event } from "../event/Event";
+import { GTextInput } from "./GTextInput";
 
 export type ButtonStatus = "up" | "down" | "over" | "selectedOver" | "disabled" | "selectedDisabled";
 
@@ -102,7 +103,7 @@ export class GButton extends GComponent {
     }
 
     public get titleColor(): number {
-        var tf: GTextField = this.getTextField();
+        var tf = this.getTextField();
         if (tf)
             return tf.color;
         else
@@ -110,14 +111,14 @@ export class GButton extends GComponent {
     }
 
     public set titleColor(value: number) {
-        var tf: GTextField = this.getTextField();
+        var tf = this.getTextField();
         if (tf)
             tf.color = value;
         this.updateGear(4);
     }
 
     public get titleFontSize(): number {
-        var tf: GTextField = this.getTextField();
+        var tf = this.getTextField();
         if (tf)
             return tf.textFormat.size;
         else
@@ -125,7 +126,7 @@ export class GButton extends GComponent {
     }
 
     public set titleFontSize(value: number) {
-        var tf: GTextField = this.getTextField();
+        var tf = this.getTextField();
         if (tf) {
             tf.textFormat.size = value;
             tf.applyFormat();
@@ -219,8 +220,8 @@ export class GButton extends GComponent {
         this._changeStateOnClick = value;
     }
 
-    public getTextField(): GTextField {
-        if (this._titleObject instanceof GTextField)
+    public getTextField(): GTextField | GTextInput {
+        if ((this._titleObject instanceof GTextField) || (this._titleObject instanceof GTextInput))
             return this._titleObject;
         else if ('getTextField' in this._titleObject)
             return (<any>this._titleObject).getTextField();
@@ -325,7 +326,7 @@ export class GButton extends GComponent {
                 return this.titleColor;
             case ObjectPropID.OutlineColor:
                 {
-                    var tf: GTextField = this.getTextField();
+                    var tf = this.getTextField();
                     if (tf)
                         return tf.textFormat.outlineColor;
                     else
@@ -347,7 +348,7 @@ export class GButton extends GComponent {
                 break;
             case ObjectPropID.OutlineColor:
                 {
-                    var tf: GTextField = this.getTextField();
+                    let tf = this.getTextField();
                     if (tf) {
                         tf.textFormat.outlineColor = value;
                         tf.applyFormat();

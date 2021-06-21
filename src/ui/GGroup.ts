@@ -18,6 +18,7 @@ export class GGroup extends GObject {
     private _totalSize: number = 0;
     private _numChildren: number = 0;
 
+    /** @internal */ 
     public _updating: number = 0;
 
     constructor() {

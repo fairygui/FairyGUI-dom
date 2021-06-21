@@ -241,6 +241,7 @@
     class Event {
         constructor() {
             this.data = null;
+            /** @internal */
             this._callChain = [];
         }
         get type() {
@@ -360,6 +361,7 @@
             EventPool.returns(ev);
             return ev._defaultPrevented;
         }
+        /** @internal */
         _dispatch(col, ev, capture) {
             if (col.dispatching != 0)
                 return;
@@ -385,6 +387,7 @@
             }
             col.dispatching = 0;
         }
+        /** @internal */
         _dispatchDirect(type, ev) {
             let col = this._listeners[type];
             if (col) {
@@ -2675,157 +2678,77 @@
     }
 
     class Color {
-        /**
-         * 创建一个 <code>Color</code> 实例。
-         * @param	r  颜色的red分量。
-         * @param	g  颜色的green分量。
-         * @param	b  颜色的blue分量。
-         * @param	a  颜色的alpha分量。
-         */
         constructor(r = 1, g = 1, b = 1, a = 1) {
             this.r = r;
             this.g = g;
             this.b = b;
             this.a = a;
         }
-        /**
-         * Gamma空间值转换到线性空间。
-         * @param value gamma空间值。
-         */
-        static gammaToLinearSpace(value) {
-            // http://www.opengl.org/registry/specs/EXT/framebuffer_sRGB.txt
-            // http://www.opengl.org/registry/specs/EXT/texture_sRGB_decode.txt
-            // {  cs / 12.92,                 cs <= 0.04045 }
-            // {  ((cs + 0.055)/1.055)^2.4,   cs >  0.04045 }
-            if (value <= 0.04045)
-                return value / 12.92;
-            else if (value < 1.0)
-                return Math.pow((value + 0.055) / 1.055, 2.4);
-            else
-                return Math.pow(value, 2.4);
+        setRGB(rgb) {
+            this.r = ((rgb >> 16) & 0xFF) / 255;
+            this.g = ((rgb >> 8) & 0xFF) / 255;
+            this.b = (rgb & 0xFF) / 255;
         }
-        /**
-         * 线性空间值转换到Gamma空间。
-         * @param value 线性空间值。
-         */
-        static linearToGammaSpace(value) {
-            // http://www.opengl.org/registry/specs/EXT/framebuffer_sRGB.txt
-            // http://www.opengl.org/registry/specs/EXT/texture_sRGB_decode.txt
-            // {  0.0,                          0         <= cl
-            // {  12.92 * c,                    0         <  cl < 0.0031308
-            // {  1.055 * cl^0.41666 - 0.055,   0.0031308 <= cl < 1
-            // {  1.0,                                       cl >= 1  <- This has been adjusted since we want to maintain HDR colors
-            if (value <= 0.0)
-                return 0.0;
-            else if (value <= 0.0031308)
-                return 12.92 * value;
-            else if (value <= 1.0)
-                return 1.055 * Math.pow(value, 0.41666) - 0.055;
-            else
-                return Math.pow(value, 0.41666);
-        }
-        /**
-         * Gamma空间转换到线性空间。
-         * @param	linear 线性空间颜色。
-         */
-        toLinear(out) {
-            out.r = Color.gammaToLinearSpace(this.r);
-            out.g = Color.gammaToLinearSpace(this.g);
-            out.b = Color.gammaToLinearSpace(this.b);
-        }
-        /**
-         * 线性空间转换到Gamma空间。
-         * @param	gamma Gamma空间颜色。
-         */
-        toGamma(out) {
-            out.r = Color.linearToGammaSpace(this.r);
-            out.g = Color.linearToGammaSpace(this.g);
-            out.b = Color.linearToGammaSpace(this.b);
-        }
-        /**
-         * 克隆。
-         * @param	destObject 克隆源。
-         */
-        cloneTo(destObject) {
+        copyTo(destObject) {
             var destColor = destObject;
             destColor.r = this.r;
             destColor.g = this.g;
             destColor.b = this.b;
             destColor.a = this.a;
         }
-        /**
-         * 克隆。
-         * @return	 克隆副本。
-         */
         clone() {
             var dest = new Color();
-            this.cloneTo(dest);
+            this.copyTo(dest);
             return dest;
         }
-        forNativeElement() {
-            /*if (nativeElements) {
-                this.elements = nativeElements;
-                this.elements[0] = this.r;
-                this.elements[1] = this.g;
-                this.elements[2] = this.b;
-                this.elements[3] = this.a;
-            } else {
-                this.elements = new Float32Array([this.r,this.g,this.b,this.a]);
-            }
-            Vector2.rewriteNumProperty(this, "r", 0);
-            Vector2.rewriteNumProperty(this, "g", 1);
-            Vector2.rewriteNumProperty(this, "b", 2);
-            Vector2.rewriteNumProperty(this, "a", 3);*/
-        }
         getHex() {
-            return (this.r * 255) << 16 ^ (this.g * 255) << 8 ^ (this.b * 255) << 0;
+            return (Math.round(this.r * 255) << 16) + (Math.round(this.g * 255) << 8) + Math.round(this.b * 255);
         }
-        getHexString() {
+        toHexString() {
             return "#" + ('000000' + this.getHex().toString(16)).slice(-6);
+        }
+        toStyleString() {
+            if (this.a == 1)
+                return this.toHexString();
+            else
+                return "rgba(" + Math.round(this.r * 255) + "," + Math.round(this.g * 255) + "," + Math.round(this.b * 255) + "," + this.a + ")";
+        }
+        parseHexString(str) {
+            if (str.length < 1)
+                return Color.BLACK;
+            if (str.charAt(0) == "#")
+                str = str.substr(1);
+            let rgb;
+            let a = 255;
+            if (str.length == 8) {
+                a = parseInt(str.substr(0, 2), 16);
+                rgb = parseInt(str.substr(2), 16);
+            }
+            else
+                rgb = parseInt(str, 16);
+            this.r = ((rgb >> 16) & 0xFF) / 255;
+            this.g = ((rgb >> 8) & 0xFF) / 255;
+            this.b = (rgb & 0xFF) / 255;
+            this.a = a / 255;
+        }
+        static fromHexString(str) {
+            let c = new Color();
+            c.parseHexString(str);
+            return c;
         }
     }
     Color.CLEAR = new Color(0, 0, 0, 0);
-    /**
-     * 红色
-     */
     Color.RED = new Color(1, 0, 0, 1);
-    /**
-     * 绿色
-     */
     Color.GREEN = new Color(0, 1, 0, 1);
-    /**
-     * 蓝色
-     */
     Color.BLUE = new Color(0, 0, 1, 1);
-    /**
-     * 蓝绿色
-     */
-    Color.CYAN = new Color(0, 1, 1, 1);
-    /**
-     * 黄色
-     */
-    Color.YELLOW = new Color(1, 0.92, 0.016, 1);
-    /**
-     * 品红色
-     */
-    Color.MAGENTA = new Color(1, 0, 1, 1);
-    /**
-     * 灰色
-     */
+    Color.YELLOW = new Color(1, 1, 0, 1);
     Color.GRAY = new Color(0.5, 0.5, 0.5, 1);
-    /**
-     * 白色
-     */
-    Color.WHITE = new Color(1, 1, 1, 1);
-    /**
-     * 黑色
-     */
     Color.BLACK = new Color(0, 0, 0, 1);
 
     class UIConfig {
     }
     //When a modal window is in front, the background becomes dark.
-    UIConfig.modalLayerColor = new Color(0x333333, 0.2);
+    UIConfig.modalLayerColor = new Color(0.2, 0.2, 0.2, 0.2);
     //Default button click sound
     UIConfig.buttonSound = null;
     UIConfig.buttonSoundVolumeScale = 1;
@@ -2906,10 +2829,15 @@
             this.sourceHeight = 0;
             this.initWidth = 0;
             this.initHeight = 0;
+            /** @internal */
             this._width = 0;
+            /** @internal */
             this._height = 0;
+            /** @internal */
             this._rawWidth = 0;
+            /** @internal */
             this._rawHeight = 0;
+            /** @internal */
             this._sizePercentInGroup = 0;
             //drag support
             //-------------------------------------------------------------------
@@ -3407,7 +3335,7 @@
             return this.hasListener("click");
         }
         bubbleEvent(type, data) {
-            this._element.bubbleEvent(type, data);
+            this._element.bubbleEvent(this._element, type, data);
         }
         get draggable() {
             return this._draggable;
@@ -3683,6 +3611,11 @@
             }
         }
         __touchBegin(evt) {
+            let currentFocus = GRoot.inst.focus;
+            if (currentFocus && ('editable' in currentFocus) && currentFocus.editable) {
+                this._dragTesting = false;
+                return;
+            }
             if (this._dragStartPos == null)
                 this._dragStartPos = new Vec2();
             this._dragStartPos.set(evt.input.x, evt.input.y);
@@ -3766,6 +3699,7 @@
             this._mainChildIndex = -1;
             this._totalSize = 0;
             this._numChildren = 0;
+            /** @internal */
             this._updating = 0;
         }
         createElement() {
@@ -4437,36 +4371,10 @@
         }
     }
 
-    function convertToHtmlColor(argb, hasAlpha) {
-        var alpha;
-        if (hasAlpha)
-            alpha = (argb >> 24 & 0xFF).toString(16);
-        else
-            alpha = "";
-        var red = (argb >> 16 & 0xFF).toString(16);
-        var green = (argb >> 8 & 0xFF).toString(16);
-        var blue = (argb & 0xFF).toString(16);
-        if (alpha.length == 1)
-            alpha = "0" + alpha;
-        if (red.length == 1)
-            red = "0" + red;
-        if (green.length == 1)
-            green = "0" + green;
-        if (blue.length == 1)
-            blue = "0" + blue;
-        return "#" + alpha + red + green + blue;
-    }
-    function convertFromHtmlColor(str, hasAlpha) {
-        if (str.length < 1)
-            return 0;
-        if (str.charAt(0) == "#")
-            str = str.substr(1);
-        if (str.length == 8)
-            return (parseInt(str.substr(0, 2), 16) << 24) + parseInt(str.substr(2), 16);
-        else if (hasAlpha)
-            return 0xFF000000 + parseInt(str, 16);
-        else
-            return parseInt(str, 16);
+    const s_color = new Color();
+    function convertToHtmlColor(rgb) {
+        s_color.setRGB(rgb);
+        return s_color.toStyleString();
     }
     function clamp(value, min, max) {
         if (value < min)
@@ -6047,7 +5955,13 @@
                     this._hzScrollBar.setDisplayPerc(Math.min(1, this._viewSize.x / this._contentSize.x));
             }
             this.updateScrollBarVisible();
-            this._maskContainer.setSize(this._viewSize.x, this._viewSize.y);
+            let mw = this._viewSize.x;
+            let mh = this._viewSize.y;
+            if (this._vScrollNone && this._vtScrollBar != null)
+                mw += this._vtScrollBar.width;
+            if (this._hScrollNone && this._hzScrollBar != null)
+                mh += this._hzScrollBar.height;
+            this._maskContainer.setSize(mw, mh);
             if (this._scrollType == exports.ScrollType.Horizontal || this._scrollType == exports.ScrollType.Both)
                 this._overlapSize.x = Math.ceil(Math.max(0, this._contentSize.x - this._viewSize.x));
             else
@@ -6423,7 +6337,7 @@
         __mouseWheel(evt) {
             if (!this._mouseWheelEnabled)
                 return;
-            var delta = evt.input.mouseWheelDelta / 10;
+            var delta = evt.input.mouseWheelDelta;
             if (this._snapToItem && Math.abs(delta) < 1)
                 delta = Math.sign(delta);
             if (this._overlapSize.x > 0 && this._overlapSize.y == 0) {
@@ -9504,6 +9418,7 @@
             this._popupStack = [];
             this._justClosedPopups = [];
             this.on("pointer_down", this.__elementTouchBegin, this, true);
+            ownerWindow.addEventListener("blur", () => this.checkPopups());
             this._modalLayer = new GGraph();
             this._modalLayer.setSize(this.width, this.height);
             this._modalLayer.element.drawRect(0, Color.CLEAR, UIConfig.modalLayerColor);
@@ -10123,9 +10038,11 @@
             let value = this.getString(attrs, attrName);
             if (value == null || value.length == 0)
                 return defValue == null ? 0 : defValue;
-            return convertFromHtmlColor(value);
+            s_color$1.parseHexString(value);
+            return s_color$1.getHex();
         }
     }
+    let s_color$1 = new Color();
 
     class GTextField extends GObject {
         constructor() {
@@ -11028,7 +10945,7 @@
                 return false;
         }
         getTextField() {
-            if (this._titleObject instanceof GTextField)
+            if ((this._titleObject instanceof GTextField) || (this._titleObject instanceof GTextInput))
                 return this._titleObject;
             else if ('getTextField' in this._titleObject)
                 return this._titleObject.getTextField();
@@ -11041,7 +10958,7 @@
                     return this.titleColor;
                 case exports.ObjectPropID.OutlineColor:
                     {
-                        var tf = this.getTextField();
+                        let tf = this.getTextField();
                         if (tf)
                             return tf.textFormat.outlineColor;
                         else
@@ -11060,7 +10977,7 @@
                     break;
                 case exports.ObjectPropID.OutlineColor:
                     {
-                        var tf = this.getTextField();
+                        let tf = this.getTextField();
                         if (tf) {
                             tf.textFormat.outlineColor = value;
                             tf.applyFormat();
@@ -11098,7 +11015,7 @@
             if (iv != 0)
                 this.titleFontSize = iv;
             if (buffer.readBool()) {
-                var input = this.getTextField();
+                let input = this.getTextField();
                 if (input instanceof GTextInput) {
                     str = buffer.readS();
                     if (str != null)
@@ -11282,7 +11199,7 @@
             this._changeStateOnClick = value;
         }
         getTextField() {
-            if (this._titleObject instanceof GTextField)
+            if ((this._titleObject instanceof GTextField) || (this._titleObject instanceof GTextInput))
                 return this._titleObject;
             else if ('getTextField' in this._titleObject)
                 return this._titleObject.getTextField();
@@ -11400,7 +11317,7 @@
                     break;
                 case exports.ObjectPropID.OutlineColor:
                     {
-                        var tf = this.getTextField();
+                        let tf = this.getTextField();
                         if (tf) {
                             tf.textFormat.outlineColor = value;
                             tf.applyFormat();
@@ -11564,620 +11481,6 @@
         }
     }
 
-    class UIElement extends HTMLDivElement {
-        constructor() {
-            super();
-            this._timerID = 0;
-            this._children = [];
-            this._pos = new Vec2();
-            this._scale = new Vec2(1, 1);
-            this._rot = 0;
-            this._pivot = new Vec2();
-            this._contentRect = new Rect();
-            this._alpha = 1;
-            this._touchable = true;
-            this._visible = true;
-            this._opaque = true;
-        }
-        get name() {
-            return this.id;
-        }
-        set name(value) {
-            this.id = value;
-        }
-        get x() {
-            return this._pos.x;
-        }
-        set x(value) {
-            this.setPosition(value, this._pos.y);
-        }
-        get y() {
-            return this._pos.y;
-        }
-        set y(value) {
-            this.setPosition(this._pos.x, value);
-        }
-        setPosition(x, y) {
-            if (this._pos.x != x || this._pos.y != y) {
-                this._pos.set(x, y);
-                this.style.left = x + "px";
-                this.style.top = y + "px";
-            }
-        }
-        get width() {
-            return this._contentRect.width;
-        }
-        set width(value) {
-            if (this._contentRect.width != value) {
-                this._contentRect.width = value;
-                this.onSizeChanged();
-            }
-        }
-        get height() {
-            return this._contentRect.height;
-        }
-        set height(value) {
-            if (this._contentRect.height != value) {
-                this._contentRect.height = value;
-                this.onSizeChanged();
-            }
-        }
-        setSize(wv, hv) {
-            if (wv != this._contentRect.width || hv != this._contentRect.height) {
-                this._contentRect.width = wv;
-                this._contentRect.height = hv;
-                this.onSizeChanged();
-            }
-        }
-        onSizeChanged() {
-            this.style.width = this._contentRect.width + "px";
-            this.style.height = this._contentRect.height + "px";
-        }
-        get pivotX() {
-            return this._pivot.x;
-        }
-        set pivotX(value) {
-            this.setPivot(value, this._pivot.y);
-        }
-        get pivotY() {
-            return this._pivot.y;
-        }
-        set pivotY(value) {
-            this.setPosition(this._pivot.x, value);
-        }
-        setPivot(xv, yv) {
-            if (this._pivot.x != xv || this._pivot.y != yv) {
-                this._pivot.set(xv, yv);
-                this.style.transformOrigin = this._pivot.x + "%," + this._pivot.y + "%";
-            }
-        }
-        get flip() {
-            if (this._flipX)
-                return this._flipY ? exports.FlipType.Both : exports.FlipType.Horizontal;
-            else if (this._flipY)
-                return this._flipX ? exports.FlipType.Both : exports.FlipType.Vertical;
-            else
-                return exports.FlipType.None;
-        }
-        set flip(value) {
-            let a = value == exports.FlipType.Both || value == exports.FlipType.Horizontal;
-            let b = value == exports.FlipType.Both || value == exports.FlipType.Vertical;
-            if (a != this._flipX || b != this._flipY)
-                this._flipX = a;
-            this._flipY = b;
-            this.updateTransform();
-        }
-        get cursor() {
-            return this._cursor;
-        }
-        set cursor(value) {
-            this._cursor = value;
-        }
-        updateTransform() {
-            if (this._timerID != 0)
-                return;
-            this._timerID = window.requestAnimationFrame(() => {
-                this._timerID = 0;
-                let str = [];
-                if (this._scale.x != 1 || this._flipX) {
-                    str.push("scaleX(");
-                    str.push("" + this._scale.x * (this._flipX ? -1 : 1));
-                    str.push(") ");
-                }
-                if (this._scale.y != 1 || this._flipY) {
-                    str.push("scaleY(");
-                    str.push("" + this._scale.y * (this._flipY ? -1 : 1));
-                    str.push(") ");
-                }
-                if (this._rot != 0) {
-                    str.push("rotate(");
-                    str.push("" + this._rot);
-                    str.push("deg) ");
-                }
-                if (str.length > 0)
-                    this.style.transform = str.join("");
-                else
-                    this.style.transform = "none";
-            });
-        }
-        updateFilters() {
-            let filter = "";
-            if (this._grayed)
-                filter += "grayscale(100%)";
-            this.style.filter = filter;
-        }
-        get scaleX() {
-            return this._scale.x;
-        }
-        set scaleX(value) {
-            this.setScale(value, this._scale.y);
-        }
-        get scaleY() {
-            return this._scale.y;
-        }
-        set scaleY(value) {
-            this.setScale(this._scale.x, value);
-        }
-        setScale(xv, yv) {
-            if (this._scale.x != xv || this._scale.y != yv) {
-                this._scale.set(xv, yv);
-                this.updateTransform();
-            }
-        }
-        get rotation() {
-            return this._rot;
-        }
-        set rotation(value) {
-            if (this._rot != value) {
-                this._rot = value;
-                this.updateTransform();
-            }
-        }
-        get parent() {
-            return this._parent;
-        }
-        get alpha() {
-            return this._alpha;
-        }
-        set alpha(value) {
-            if (this._alpha != value) {
-                this._alpha = value;
-                this.style.opacity = this._alpha.toFixed(3);
-            }
-        }
-        get touchable() {
-            return this._touchable;
-        }
-        set touchable(value) {
-            if (this._touchable != value) {
-                this._touchable = value;
-                this.updateTouchableFlag();
-            }
-        }
-        get opaque() {
-            return this._opaque;
-        }
-        set opaque(value) {
-            if (this._opaque != value) {
-                this._opaque = value;
-                this.updateTouchableFlag();
-            }
-        }
-        updateTouchableFlag() {
-            let str;
-            if (!this._touchable || !this._opaque || this._touchDisabled)
-                str = "none";
-            else if (this.parent && !this.parent._opaque)
-                str = "auto";
-            else
-                str = "";
-            if ((this.style.pointerEvents == null ? "" : this.style.pointerEvents) != str) {
-                this.style.pointerEvents = str;
-                const children = this._children;
-                for (let i = 0, l = children.length; i < l; i++) {
-                    children[i].updateTouchableFlag();
-                }
-            }
-        }
-        setNotInteractable() {
-            this._touchDisabled = true;
-            this.style.pointerEvents = "none";
-        }
-        get visible() {
-            return this._visible;
-        }
-        set visible(value) {
-            if (this._visible != value) {
-                this._visible = value;
-                if (value)
-                    this.style.display = "";
-                else
-                    this.style.display = "none";
-            }
-        }
-        get grayed() {
-            return this._grayed;
-        }
-        set grayed(value) {
-            if (this._grayed != value) {
-                this._grayed = value;
-                this.updateFilters();
-            }
-        }
-        // public get blendMode(): Blending {
-        //     return this._graphics ? this._graphics.material.blending : NormalBlending;
-        // }
-        // public set blendMode(value: Blending) {
-        //     if (this._graphics)
-        //         this._graphics.material.blending = value;
-        // }
-        get focusable() {
-            return !this._notFocusable;
-        }
-        set focusable(value) {
-            this._notFocusable = !value;
-        }
-        get focused() {
-            return this.stage.focusedElement == this || this.isAncestorOf(this.stage.focusedElement);
-        }
-        get tabStop() {
-            return this._tabStop;
-        }
-        set tabStop(value) {
-            if (this._tabStop != value) {
-                this._tabStop = value;
-                if (value)
-                    this.tabIndex = 0;
-                else
-                    this.tabIndex = null;
-            }
-        }
-        get tabStopChildren() {
-            return this._tabStopChildren;
-        }
-        set tabStopChildren(value) {
-            this._tabStopChildren = value;
-        }
-        get onStage() {
-            return this.isConnected;
-        }
-        get stage() {
-            let p = this;
-            while (p) {
-                if (p.is_stage)
-                    return p;
-                p = p.parentElement;
-            }
-            return window.stage;
-        }
-        globalToLocal(x, y, result) {
-            let rect = this.getBoundingClientRect();
-            let sx = this._contentRect.width > 0 ? (rect.width / this._contentRect.width) : 1;
-            let sy = this._contentRect.height > 0 ? (rect.height / this._contentRect.height) : 1;
-            if (!result)
-                result = new Vec2();
-            result.x = x - rect.x / sx;
-            result.y = y - rect.y / sy;
-            return result;
-        }
-        localToGlobal(x, y, result) {
-            let rect = this.getBoundingClientRect();
-            let sx = this._contentRect.width > 0 ? (rect.width / this._contentRect.width) : 1;
-            let sy = this._contentRect.height > 0 ? (rect.height / this._contentRect.height) : 1;
-            if (!result)
-                result = new Vec2();
-            result.x = x * sx + rect.x;
-            result.y = y * sy + rect.y;
-            return result;
-        }
-        addChild(child) {
-            this.addChildAt(child, Number.POSITIVE_INFINITY);
-        }
-        addChildAt(child, index) {
-            if (child._parent == this)
-                this.setChildIndex(child, index);
-            else {
-                if (index > this._children.length - 1) {
-                    this.appendChild(child);
-                }
-                else {
-                    let refNode = this._children[index];
-                    this.insertBefore(child, refNode);
-                }
-                this._children.splice(index, 0, child);
-                child._parent = this;
-                child.updateTouchableFlag();
-            }
-            if (this.isConnected)
-                child.broadcastEvent("added_to_stage");
-        }
-        removeChild(child) {
-            if (child instanceof UIElement) {
-                let index = this._children.indexOf(child);
-                if (index == -1)
-                    throw 'not a child';
-                this.removeChildAt(index);
-            }
-            else
-                super.removeChild(child);
-            return child;
-        }
-        removeChildAt(index) {
-            let child = this._children[index];
-            if (this.isConnected) {
-                child.broadcastEvent("removed_from_stage");
-                this.stage.validateFocus(this, child);
-            }
-            this._children.splice(index, 1);
-            super.removeChild(child);
-            child._parent = null;
-        }
-        setChildIndex(child, index) {
-            let oldIndex = this._children.indexOf(child);
-            if (oldIndex == index)
-                return;
-            if (oldIndex == -1)
-                throw 'Not a child';
-            this._children.splice(oldIndex, 1);
-            if (index >= this._children.length - 1) {
-                this._children.push(child);
-                this.appendChild(child);
-            }
-            else {
-                this._children.splice(index, 0, child);
-                let refNode = this._children[index + 1];
-                this.insertBefore(child, refNode);
-            }
-        }
-        getIndex(child) {
-            return this._children.indexOf(child);
-        }
-        get numChildren() {
-            return this._children.length;
-        }
-        isAncestorOf(child) {
-            if (child == null)
-                return false;
-            var p = child.parent;
-            while (p) {
-                if (p == this)
-                    return true;
-                p = p.parent;
-            }
-            return false;
-        }
-        get clipping() {
-            return this._clipping;
-        }
-        set clipping(value) {
-            if (this._clipping != value) {
-                this._clipping = value;
-                if (this._clipping)
-                    this.style.overflow = "hidden";
-                else
-                    this.style.overflow = "visible";
-            }
-        }
-        init() {
-        }
-        dispose() {
-        }
-        traverseVisible(callback) {
-            if (!this._visible)
-                return;
-            callback(this);
-            const children = this._children;
-            for (let i = 0, l = children.length; i < l; i++) {
-                children[i].traverseVisible(callback);
-            }
-        }
-        traverseAncestors(callback) {
-            const parent = this._parent;
-            if (parent) {
-                callback(parent);
-                parent.traverseAncestors(callback);
-            }
-        }
-        broadcastEvent(type, data) {
-            let ev = EventPool.borrow();
-            ev._type = type;
-            ev.data = data;
-            let arr = ev._callChain;
-            this.traverseVisible(obj => {
-                if (obj.$owner)
-                    arr.push(obj.$owner);
-            });
-            arr.forEach(obj => {
-                obj._dispatchDirect(type, ev);
-            });
-            arr.length = 0;
-            EventPool.returns(ev);
-        }
-        bubbleEvent(type, data, addChain) {
-            let ev = EventPool.borrow();
-            ev._type = type;
-            ev.data = data;
-            ev._initiator = this;
-            let arr = ev._callChain;
-            if (this.$owner)
-                arr.push(this.$owner);
-            this.traverseAncestors(obj => {
-                if (obj.$owner)
-                    arr.push(obj.$owner);
-            });
-            let stage = this.stage;
-            for (let i = arr.length - 1; i >= 0; i--) {
-                let obj = arr[i];
-                let col = obj._listeners[type];
-                if (col && col.captures.length > 0) {
-                    obj._dispatch(col, ev, true);
-                    if (ev._pointerCapture) {
-                        ev._pointerCapture = false;
-                        if (type == "pointer_down")
-                            stage.addPointerMonitor(ev.input.pointerId, obj);
-                    }
-                }
-            }
-            if (!ev._stopsPropagation) {
-                for (let i = 0; i < arr.length; i++) {
-                    let obj = arr[i];
-                    let col = obj._listeners[type];
-                    if (col && col.callbacks.length > 0) {
-                        obj._dispatch(col, ev, false);
-                        if (ev._pointerCapture) {
-                            ev._pointerCapture = false;
-                            if (type == "pointer_down")
-                                stage.addPointerMonitor(ev.input.pointerId, obj);
-                        }
-                        if (ev._stopsPropagation)
-                            break;
-                    }
-                }
-                if (addChain) {
-                    for (let i = 0; i < addChain.length; i++) {
-                        let obj = addChain[i];
-                        if (obj && arr.indexOf(obj) == -1) {
-                            obj._dispatchDirect(type, ev);
-                        }
-                    }
-                }
-            }
-            arr.length = 0;
-            EventPool.returns(ev);
-        }
-    }
-
-    class TextFormat {
-        constructor() {
-            this.size = 0;
-            this.color = 0;
-            this.lineSpacing = 0;
-            this.letterSpacing = 0;
-            this.outline = 0;
-            this.outlineColor = 0;
-            this.shadowOffset = new Vec2();
-            this.shadowColor = 0;
-        }
-        copy(source) {
-            this.size = source.size;
-            this.font = source.font;
-            this.color = source.color;
-            this.lineSpacing = source.lineSpacing;
-            this.letterSpacing = source.letterSpacing;
-            this.bold = source.bold;
-            this.underline = source.underline;
-            this.italic = source.italic;
-            this.strikethrough = source.strikethrough;
-            this.align = source.align;
-            this.outline = source.outline;
-            this.outlineColor = source.outlineColor;
-            this.shadowOffset.copy(source.shadowOffset);
-            this.shadowColor = source.shadowColor;
-        }
-    }
-
-    class InputTextField extends UIElement {
-        constructor() {
-            super();
-            this._textFormat = new TextFormat();
-            this._text = "";
-            this._singleLine = true;
-        }
-        init() {
-            super.init();
-            this.createElement();
-            this.$owner.on("focus_in", () => {
-                this._input.focus();
-            });
-        }
-        get textFormat() {
-            return this._textFormat;
-        }
-        applyFormat() {
-            let fontName = this._textFormat.font;
-            if (!fontName)
-                fontName = UIConfig.defaultFont;
-            this._input.style.textAlign = this._textFormat.align;
-            this._input.style.verticalAlign = this._textFormat.verticalAlign;
-            this._input.style.fontSize = this._textFormat.size + "px";
-            this._input.style.fontFamily = fontName;
-            this._input.style.color = convertToHtmlColor(this._textFormat.color);
-        }
-        get text() {
-            this._text = this._input.value;
-            return this._text;
-        }
-        set text(value) {
-            this._text = value;
-            this._input.value = this._text;
-        }
-        get singleLine() {
-            return this._singleLine;
-        }
-        set singleLine(value) {
-            if (this._singleLine != value) {
-                this._singleLine = value;
-                this.createElement();
-            }
-        }
-        createElement() {
-            let old = this._input;
-            if (old)
-                this.removeChild(old);
-            let e;
-            if (this._singleLine) {
-                e = document.createElement("input");
-            }
-            else {
-                e = document.createElement("textarea");
-            }
-            this._input = e;
-            if (e instanceof HTMLInputElement) {
-                if (this._password)
-                    e.type = "password";
-                else
-                    e.type = "text";
-            }
-            e.value = this._text;
-            e.readOnly = old ? old.readOnly : false;
-            e.spellcheck = false;
-            e.onfocus = () => { this.stage.setFocus(this); };
-            this.appendChild(this._input);
-        }
-        setPromptText(value) {
-            this._input.placeholder = defaultParser.parse(value, true);
-        }
-        setMaxLength(value) {
-            if (value > 0)
-                this._input.maxLength = value;
-            else
-                this._input.maxLength = 524288;
-        }
-        setKeyboardType(keyboardType) {
-        }
-        setRestrict(value) {
-        }
-        get editable() {
-            return !this._input.readOnly;
-        }
-        set editable(value) {
-            this._input.readOnly = !value;
-        }
-        get password() {
-            return this._password;
-        }
-        set password(value) {
-            if (this._password != value) {
-                this._password = value;
-                if (this._input instanceof HTMLInputElement)
-                    this._input.type = value ? "password" : "text";
-            }
-        }
-        setSelection(start, end) {
-            this._input.setSelectionRange(start, end);
-        }
-    }
-
     class GComboBox extends GComponent {
         constructor() {
             super();
@@ -12308,7 +11611,7 @@
             this.selectedIndex = index;
         }
         getTextField() {
-            if (this._titleObject instanceof GTextField)
+            if ((this._titleObject instanceof GTextField) || (this._titleObject instanceof GTextInput))
                 return this._titleObject;
             else if ('getTextField' in this._titleObject)
                 return this._titleObject.getTextField();
@@ -12361,7 +11664,7 @@
                     return this.titleColor;
                 case exports.ObjectPropID.OutlineColor:
                     {
-                        var tf = this.getTextField();
+                        let tf = this.getTextField();
                         if (tf)
                             return tf.textFormat.outlineColor;
                         else
@@ -12369,7 +11672,7 @@
                     }
                 case exports.ObjectPropID.FontSize:
                     {
-                        tf = this.getTextField();
+                        let tf = this.getTextField();
                         if (tf)
                             return tf.textFormat.size;
                         else
@@ -12386,7 +11689,7 @@
                     break;
                 case exports.ObjectPropID.OutlineColor:
                     {
-                        var tf = this.getTextField();
+                        let tf = this.getTextField();
                         if (tf) {
                             tf.textFormat.outlineColor = value;
                             tf.applyFormat();
@@ -12395,7 +11698,7 @@
                     break;
                 case exports.ObjectPropID.FontSize:
                     {
-                        tf = this.getTextField();
+                        let tf = this.getTextField();
                         if (tf) {
                             tf.textFormat.size = value;
                             tf.applyFormat();
@@ -12527,7 +11830,7 @@
             this.setCurrentState();
         }
         __mousedown(evt) {
-            if (evt.initiator instanceof InputTextField)
+            if (evt.initiator.tagName == "INPUT" || evt.initiator.tagName == "TEXTAREA")
                 return;
             this._down = true;
             if (this.dropdown)
@@ -15255,6 +14558,12 @@
                     else
                         this._tree._afterCollapsed(this);
                 }
+                else if (this._cell) {
+                    let cc = this._cell.getController("expanded");
+                    if (cc) {
+                        cc.selectedIndex = this.expanded ? 1 : 0;
+                    }
+                }
             }
         }
         get expanded() {
@@ -15289,11 +14598,40 @@
         get cell() {
             return this._cell;
         }
+        set cell(value) {
+            if (this._cell)
+                this._cell._treeNode = null;
+            this._cell = value;
+            this._cellFromPool = false;
+            if (!this._cell)
+                return;
+            this._cell._treeNode = this;
+            this._indentObj = this._cell.getChild("indent");
+            if (this._tree && this._indentObj)
+                this._indentObj.width = (this._level - 1) * this._tree.indent;
+            var cc;
+            cc = this._cell.getController("expanded");
+            if (cc) {
+                cc.on("status_changed", this.__expandedStateChanged, this);
+                cc.selectedIndex = this.expanded ? 1 : 0;
+            }
+            cc = this._cell.getController("leaf");
+            if (cc)
+                cc.selectedIndex = this.isFolder ? 0 : 1;
+            if (this.isFolder)
+                this._cell.on("pointer_down", this.__cellMouseDown, this);
+        }
+        createCell() {
+            if (this._cell)
+                return;
+            var child = this._tree.getFromPool(this._resURL ? this._resURL : this._tree.defaultItem);
+            if (!child)
+                throw new Error("cannot create tree node object.");
+            this.cell = child;
+            this._cellFromPool = true;
+        }
         get level() {
             return this._level;
-        }
-        _setLevel(value) {
-            this._level = value;
         }
         addChild(child) {
             this.addChildAt(child, this._children.length);
@@ -15415,6 +14753,9 @@
         get numChildren() {
             return this._children.length;
         }
+        getChildren() {
+            return this._children;
+        }
         expandToRoot() {
             var p = this;
             while (p) {
@@ -15427,6 +14768,8 @@
         }
         _setTree(value) {
             this._tree = value;
+            if (this._tree && this._indentObj)
+                this._indentObj.width = (this._level - 1) * this._tree.indent;
             if (this._tree && this._tree.treeNodeWillExpand && this._expanded)
                 this._tree.treeNodeWillExpand(this, true);
             if (this._children) {
@@ -15437,6 +14780,14 @@
                     node._setTree(value);
                 }
             }
+        }
+        __expandedStateChanged(evt) {
+            let cc = evt.target;
+            this.expanded = cc.selectedIndex == 1;
+        }
+        __cellMouseDown(evt) {
+            if (this._tree)
+                this._tree._expandedStatusInEvt = this._expanded;
         }
     }
 
@@ -15489,14 +14840,14 @@
                 parentNode.expanded = true;
                 parentNode = parentNode.parent;
             }
-            if (!node._cell)
+            if (!node.cell)
                 return;
-            this.addSelection(this.getChildIndex(node._cell), scrollItToView);
+            this.addSelection(this.getChildIndex(node.cell), scrollItToView);
         }
         unselectNode(node) {
-            if (!node._cell)
+            if (!node.cell)
                 return;
-            this.removeSelection(this.getChildIndex(node._cell));
+            this.removeSelection(this.getChildIndex(node.cell));
         }
         expandAll(folderNode) {
             if (!folderNode)
@@ -15522,35 +14873,18 @@
             }
         }
         createCell(node) {
-            var child = this.getFromPool(node._resURL ? node._resURL : this.defaultItem);
-            if (!child)
-                throw new Error("cannot create tree node object.");
-            child._treeNode = node;
-            node._cell = child;
-            var indentObj = child.getChild("indent");
-            if (indentObj)
-                indentObj.width = (node.level - 1) * this._indent;
-            var cc;
-            cc = child.getController("expanded");
-            if (cc) {
-                cc.on("status_changed", this.__expandedStateChanged, this);
-                cc.selectedIndex = node.expanded ? 1 : 0;
-            }
-            cc = child.getController("leaf");
-            if (cc)
-                cc.selectedIndex = node.isFolder ? 0 : 1;
-            if (node.isFolder)
-                child.on("pointer_down", this.__cellMouseDown, this);
+            node.createCell();
             if (this.treeNodeRender)
-                this.treeNodeRender(node, child);
+                this.treeNodeRender(node, node.cell);
         }
+        /** @internal */
         _afterInserted(node) {
-            if (!node._cell)
+            if (!node.cell)
                 this.createCell(node);
             var index = this.getInsertIndexForNode(node);
-            this.addChildAt(node._cell, index);
+            this.addChildAt(node.cell, index);
             if (this.treeNodeRender)
-                this.treeNodeRender(node, node._cell);
+                this.treeNodeRender(node, node.cell);
             if (node.isFolder && node.expanded)
                 this.checkChildren(node, index);
         }
@@ -15558,7 +14892,7 @@
             var prevNode = node.getPrevSibling();
             if (prevNode == null)
                 prevNode = node.parent;
-            var insertIndex = this.getChildIndex(prevNode._cell) + 1;
+            var insertIndex = this.getChildIndex(prevNode.cell) + 1;
             var myLevel = node.level;
             var cnt = this.numChildren;
             for (var i = insertIndex; i < cnt; i++) {
@@ -15569,9 +14903,11 @@
             }
             return insertIndex;
         }
+        /** @internal */
         _afterRemoved(node) {
             this.removeNode(node);
         }
+        /** @internal */
         _afterExpanded(node) {
             if (node == this._rootNode) {
                 this.checkChildren(this._rootNode, 0);
@@ -15579,16 +14915,19 @@
             }
             if (this.treeNodeWillExpand)
                 this.treeNodeWillExpand(node, true);
-            if (node._cell == null)
+            if (node.onExpanded)
+                node.onExpanded();
+            if (node.cell == null)
                 return;
             if (this.treeNodeRender)
-                this.treeNodeRender(node, node._cell);
-            var cc = node._cell.getController("expanded");
+                this.treeNodeRender(node, node.cell);
+            var cc = node.cell.getController("expanded");
             if (cc)
                 cc.selectedIndex = 1;
-            if (node._cell.parent)
-                this.checkChildren(node, this.getChildIndex(node._cell));
+            if (node.cell.parent)
+                this.checkChildren(node, this.getChildIndex(node.cell));
         }
+        /** @internal */
         _afterCollapsed(node) {
             if (node == this._rootNode) {
                 this.checkChildren(this._rootNode, 0);
@@ -15596,18 +14935,19 @@
             }
             if (this.treeNodeWillExpand)
                 this.treeNodeWillExpand(node, false);
-            if (node._cell == null)
+            if (node.cell == null)
                 return;
             if (this.treeNodeRender)
-                this.treeNodeRender(node, node._cell);
-            var cc = node._cell.getController("expanded");
+                this.treeNodeRender(node, node.cell);
+            var cc = node.cell.getController("expanded");
             if (cc)
                 cc.selectedIndex = 0;
-            if (node._cell.parent)
+            if (node.cell.parent)
                 this.hideFolderNode(node);
         }
+        /** @internal */
         _afterMoved(node) {
-            var startIndex = this.getChildIndex(node._cell);
+            var startIndex = this.getChildIndex(node.cell);
             var endIndex;
             if (node.isFolder)
                 endIndex = this.getFolderEndIndex(startIndex, node.level);
@@ -15644,10 +14984,10 @@
             for (var i = 0; i < cnt; i++) {
                 index++;
                 var node = folderNode.getChildAt(i);
-                if (node._cell == null)
+                if (node.cell == null)
                     this.createCell(node);
-                if (!node._cell.parent)
-                    this.addChildAt(node._cell, index);
+                if (!node.cell.parent)
+                    this.addChildAt(node.cell, index);
                 if (node.isFolder && node.expanded)
                     index = this.checkChildren(node, index);
             }
@@ -15657,19 +14997,20 @@
             var cnt = folderNode.numChildren;
             for (var i = 0; i < cnt; i++) {
                 var node = folderNode.getChildAt(i);
-                if (node._cell)
-                    this.removeChild(node._cell);
+                if (node.cell)
+                    this.removeChild(node.cell);
                 if (node.isFolder && node.expanded)
                     this.hideFolderNode(node);
             }
         }
         removeNode(node) {
-            if (node._cell) {
-                if (node._cell.parent)
-                    this.removeChild(node._cell);
-                this.returnToPool(node._cell);
-                node._cell._treeNode = null;
-                node._cell = null;
+            if (node.cell) {
+                if (node.cell.parent)
+                    this.removeChild(node.cell);
+                if (node._cellFromPool) {
+                    this.returnToPool(node.cell);
+                    node.cell = null;
+                }
             }
             if (node.isFolder) {
                 var cnt = node.numChildren;
@@ -15678,15 +15019,6 @@
                     this.removeNode(node2);
                 }
             }
-        }
-        __cellMouseDown(evt) {
-            var node = evt.sender._treeNode;
-            this._expandedStatusInEvt = node.expanded;
-        }
-        __expandedStateChanged(evt) {
-            let cc = evt.target;
-            var node = cc.parent._treeNode;
-            node.expanded = cc.selectedIndex == 1;
         }
         dispatchItemEvent(item, evt) {
             if (this._clickToExpand != 0) {
@@ -15912,7 +15244,7 @@
                     if (obj == null)
                         continue;
                     let tf = obj.getTextField();
-                    if (tf != null) {
+                    if (tf instanceof GTextField) {
                         let v = tf.textWidth - tf.width;
                         if (v > maxDelta)
                             maxDelta = v;
@@ -16236,6 +15568,519 @@
         }
     }
 
+    class UIElement extends HTMLDivElement {
+        constructor() {
+            super();
+            this._timerID = 0;
+            this._children = [];
+            this._pos = new Vec2();
+            this._scale = new Vec2(1, 1);
+            this._rot = 0;
+            this._pivot = new Vec2();
+            this._contentRect = new Rect();
+            this._alpha = 1;
+            this._touchable = true;
+            this._visible = true;
+            this._opaque = true;
+        }
+        get name() {
+            return this.id;
+        }
+        set name(value) {
+            this.id = value;
+        }
+        get x() {
+            return this._pos.x;
+        }
+        set x(value) {
+            this.setPosition(value, this._pos.y);
+        }
+        get y() {
+            return this._pos.y;
+        }
+        set y(value) {
+            this.setPosition(this._pos.x, value);
+        }
+        setPosition(x, y) {
+            if (this._pos.x != x || this._pos.y != y) {
+                this._pos.set(x, y);
+                this.style.left = x + "px";
+                this.style.top = y + "px";
+            }
+        }
+        get width() {
+            return this._contentRect.width;
+        }
+        set width(value) {
+            if (this._contentRect.width != value) {
+                this._contentRect.width = value;
+                this.onSizeChanged();
+            }
+        }
+        get height() {
+            return this._contentRect.height;
+        }
+        set height(value) {
+            if (this._contentRect.height != value) {
+                this._contentRect.height = value;
+                this.onSizeChanged();
+            }
+        }
+        setSize(wv, hv) {
+            if (wv != this._contentRect.width || hv != this._contentRect.height) {
+                this._contentRect.width = wv;
+                this._contentRect.height = hv;
+                this.onSizeChanged();
+            }
+        }
+        onSizeChanged() {
+            this.style.width = this._contentRect.width + "px";
+            this.style.height = this._contentRect.height + "px";
+        }
+        get pivotX() {
+            return this._pivot.x;
+        }
+        set pivotX(value) {
+            this.setPivot(value, this._pivot.y);
+        }
+        get pivotY() {
+            return this._pivot.y;
+        }
+        set pivotY(value) {
+            this.setPosition(this._pivot.x, value);
+        }
+        setPivot(xv, yv) {
+            if (this._pivot.x != xv || this._pivot.y != yv) {
+                this._pivot.set(xv, yv);
+                this.style.transformOrigin = this._pivot.x + "%," + this._pivot.y + "%";
+            }
+        }
+        get flip() {
+            if (this._flipX)
+                return this._flipY ? exports.FlipType.Both : exports.FlipType.Horizontal;
+            else if (this._flipY)
+                return this._flipX ? exports.FlipType.Both : exports.FlipType.Vertical;
+            else
+                return exports.FlipType.None;
+        }
+        set flip(value) {
+            let a = value == exports.FlipType.Both || value == exports.FlipType.Horizontal;
+            let b = value == exports.FlipType.Both || value == exports.FlipType.Vertical;
+            if (a != this._flipX || b != this._flipY)
+                this._flipX = a;
+            this._flipY = b;
+            this.updateTransform();
+        }
+        get cursor() {
+            return this._cursor;
+        }
+        set cursor(value) {
+            this._cursor = value;
+        }
+        updateTransform() {
+            if (this._timerID != 0)
+                return;
+            this._timerID = window.requestAnimationFrame(() => {
+                this._timerID = 0;
+                let str = [];
+                if (this._scale.x != 1 || this._flipX) {
+                    str.push("scaleX(");
+                    str.push("" + this._scale.x * (this._flipX ? -1 : 1));
+                    str.push(") ");
+                }
+                if (this._scale.y != 1 || this._flipY) {
+                    str.push("scaleY(");
+                    str.push("" + this._scale.y * (this._flipY ? -1 : 1));
+                    str.push(") ");
+                }
+                if (this._rot != 0) {
+                    str.push("rotate(");
+                    str.push("" + this._rot);
+                    str.push("deg) ");
+                }
+                if (str.length > 0)
+                    this.style.transform = str.join("");
+                else
+                    this.style.transform = "none";
+            });
+        }
+        updateFilters() {
+            let filter = "";
+            if (this._grayed)
+                filter += "grayscale(100%)";
+            this.style.filter = filter;
+        }
+        get scaleX() {
+            return this._scale.x;
+        }
+        set scaleX(value) {
+            this.setScale(value, this._scale.y);
+        }
+        get scaleY() {
+            return this._scale.y;
+        }
+        set scaleY(value) {
+            this.setScale(this._scale.x, value);
+        }
+        setScale(xv, yv) {
+            if (this._scale.x != xv || this._scale.y != yv) {
+                this._scale.set(xv, yv);
+                this.updateTransform();
+            }
+        }
+        get rotation() {
+            return this._rot;
+        }
+        set rotation(value) {
+            if (this._rot != value) {
+                this._rot = value;
+                this.updateTransform();
+            }
+        }
+        get parent() {
+            return this._parent;
+        }
+        get alpha() {
+            return this._alpha;
+        }
+        set alpha(value) {
+            if (this._alpha != value) {
+                this._alpha = value;
+                this.style.opacity = this._alpha.toFixed(3);
+            }
+        }
+        get touchable() {
+            return this._touchable;
+        }
+        set touchable(value) {
+            if (this._touchable != value) {
+                this._touchable = value;
+                this.updateTouchableFlag();
+            }
+        }
+        get opaque() {
+            return this._opaque;
+        }
+        set opaque(value) {
+            if (this._opaque != value) {
+                this._opaque = value;
+                this.updateTouchableFlag();
+            }
+        }
+        updateTouchableFlag() {
+            let str;
+            if (!this._touchable || !this._opaque || this._touchDisabled)
+                str = "none";
+            else if (this.parent && !this.parent._opaque)
+                str = "auto";
+            else
+                str = "";
+            if ((this.style.pointerEvents == null ? "" : this.style.pointerEvents) != str) {
+                this.style.pointerEvents = str;
+                const children = this._children;
+                for (let i = 0, l = children.length; i < l; i++) {
+                    children[i].updateTouchableFlag();
+                }
+            }
+        }
+        setNotInteractable() {
+            this._touchDisabled = true;
+            this.style.pointerEvents = "none";
+        }
+        get visible() {
+            return this._visible;
+        }
+        set visible(value) {
+            if (this._visible != value) {
+                this._visible = value;
+                if (value)
+                    this.style.display = "";
+                else
+                    this.style.display = "none";
+            }
+        }
+        get grayed() {
+            return this._grayed;
+        }
+        set grayed(value) {
+            if (this._grayed != value) {
+                this._grayed = value;
+                this.updateFilters();
+            }
+        }
+        // public get blendMode(): Blending {
+        //     return this._graphics ? this._graphics.material.blending : NormalBlending;
+        // }
+        // public set blendMode(value: Blending) {
+        //     if (this._graphics)
+        //         this._graphics.material.blending = value;
+        // }
+        get focusable() {
+            return !this._notFocusable;
+        }
+        set focusable(value) {
+            this._notFocusable = !value;
+        }
+        get focused() {
+            return this.stage.focusedElement == this || this.isAncestorOf(this.stage.focusedElement);
+        }
+        get tabStop() {
+            return this._tabStop;
+        }
+        set tabStop(value) {
+            if (this._tabStop != value) {
+                this._tabStop = value;
+                if (value)
+                    this.tabIndex = 0;
+                else
+                    this.tabIndex = null;
+            }
+        }
+        get tabStopChildren() {
+            return this._tabStopChildren;
+        }
+        set tabStopChildren(value) {
+            this._tabStopChildren = value;
+        }
+        get onStage() {
+            return this.isConnected;
+        }
+        get stage() {
+            let p = this;
+            while (p) {
+                if (p.is_stage)
+                    return p;
+                p = p.parentElement;
+            }
+            return window.stage;
+        }
+        globalToLocal(x, y, result) {
+            let rect = this.getBoundingClientRect();
+            let sx = this._contentRect.width > 0 ? (rect.width / this._contentRect.width) : 1;
+            let sy = this._contentRect.height > 0 ? (rect.height / this._contentRect.height) : 1;
+            if (!result)
+                result = new Vec2();
+            result.x = x - rect.x / sx;
+            result.y = y - rect.y / sy;
+            return result;
+        }
+        localToGlobal(x, y, result) {
+            let rect = this.getBoundingClientRect();
+            let sx = this._contentRect.width > 0 ? (rect.width / this._contentRect.width) : 1;
+            let sy = this._contentRect.height > 0 ? (rect.height / this._contentRect.height) : 1;
+            if (!result)
+                result = new Vec2();
+            result.x = x * sx + rect.x;
+            result.y = y * sy + rect.y;
+            return result;
+        }
+        addChild(child) {
+            this.addChildAt(child, Number.POSITIVE_INFINITY);
+        }
+        addChildAt(child, index) {
+            if (child._parent == this)
+                this.setChildIndex(child, index);
+            else {
+                if (index > this._children.length - 1) {
+                    this.appendChild(child);
+                }
+                else {
+                    let refNode = this._children[index];
+                    this.insertBefore(child, refNode);
+                }
+                this._children.splice(index, 0, child);
+                child._parent = this;
+                child.updateTouchableFlag();
+            }
+            if (this.isConnected)
+                child.broadcastEvent("added_to_stage");
+        }
+        removeChild(child) {
+            if (child instanceof UIElement) {
+                let index = this._children.indexOf(child);
+                if (index == -1)
+                    throw 'not a child';
+                this.removeChildAt(index);
+            }
+            else
+                super.removeChild(child);
+            return child;
+        }
+        removeChildAt(index) {
+            let child = this._children[index];
+            if (this.isConnected) {
+                child.broadcastEvent("removed_from_stage");
+                this.stage.validateFocus(this, child);
+            }
+            this._children.splice(index, 1);
+            super.removeChild(child);
+            child._parent = null;
+        }
+        setChildIndex(child, index) {
+            let oldIndex = this._children.indexOf(child);
+            if (oldIndex == index)
+                return;
+            if (oldIndex == -1)
+                throw 'Not a child';
+            this._children.splice(oldIndex, 1);
+            if (index >= this._children.length - 1) {
+                this._children.push(child);
+                this.appendChild(child);
+            }
+            else {
+                this._children.splice(index, 0, child);
+                let refNode = this._children[index + 1];
+                this.insertBefore(child, refNode);
+            }
+        }
+        getIndex(child) {
+            return this._children.indexOf(child);
+        }
+        get numChildren() {
+            return this._children.length;
+        }
+        isAncestorOf(child) {
+            if (child == null)
+                return false;
+            var p = child.parent;
+            while (p) {
+                if (p == this)
+                    return true;
+                p = p.parent;
+            }
+            return false;
+        }
+        get clipping() {
+            return this._clipping;
+        }
+        set clipping(value) {
+            if (this._clipping != value) {
+                this._clipping = value;
+                if (this._clipping)
+                    this.style.overflow = "hidden";
+                else
+                    this.style.overflow = "visible";
+            }
+        }
+        init() {
+        }
+        dispose() {
+        }
+        traverseVisible(callback) {
+            if (!this._visible)
+                return;
+            callback(this);
+            const children = this._children;
+            for (let i = 0, l = children.length; i < l; i++) {
+                children[i].traverseVisible(callback);
+            }
+        }
+        traverseAncestors(callback) {
+            const parent = this._parent;
+            if (parent) {
+                callback(parent);
+                parent.traverseAncestors(callback);
+            }
+        }
+        broadcastEvent(type, data) {
+            let ev = EventPool.borrow();
+            ev._type = type;
+            ev.data = data;
+            ev._initiator = this;
+            let arr = ev._callChain;
+            this.traverseVisible(obj => {
+                if (obj.$owner)
+                    arr.push(obj.$owner);
+            });
+            arr.forEach(obj => {
+                obj._dispatchDirect(type, ev);
+            });
+            arr.length = 0;
+            EventPool.returns(ev);
+        }
+        bubbleEvent(initiator, type, data, addChain) {
+            let ev = EventPool.borrow();
+            ev._type = type;
+            ev.data = data;
+            ev._initiator = initiator;
+            let arr = ev._callChain;
+            if (this.$owner)
+                arr.push(this.$owner);
+            this.traverseAncestors(obj => {
+                if (obj.$owner)
+                    arr.push(obj.$owner);
+            });
+            let stage = this.stage;
+            for (let i = arr.length - 1; i >= 0; i--) {
+                let obj = arr[i];
+                let col = obj._listeners[type];
+                if (col && col.captures.length > 0) {
+                    obj._dispatch(col, ev, true);
+                    if (ev._pointerCapture) {
+                        ev._pointerCapture = false;
+                        if (type == "pointer_down")
+                            stage.addPointerMonitor(ev.input.pointerId, obj);
+                    }
+                }
+            }
+            if (!ev._stopsPropagation) {
+                for (let i = 0; i < arr.length; i++) {
+                    let obj = arr[i];
+                    let col = obj._listeners[type];
+                    if (col && col.callbacks.length > 0) {
+                        obj._dispatch(col, ev, false);
+                        if (ev._pointerCapture) {
+                            ev._pointerCapture = false;
+                            if (type == "pointer_down")
+                                stage.addPointerMonitor(ev.input.pointerId, obj);
+                        }
+                        if (ev._stopsPropagation)
+                            break;
+                    }
+                }
+                if (addChain) {
+                    for (let i = 0; i < addChain.length; i++) {
+                        let obj = addChain[i];
+                        if (obj && arr.indexOf(obj) == -1) {
+                            obj._dispatchDirect(type, ev);
+                        }
+                    }
+                }
+            }
+            arr.length = 0;
+            EventPool.returns(ev);
+        }
+    }
+
+    class TextFormat {
+        constructor() {
+            this.size = 0;
+            this.color = 0;
+            this.lineSpacing = 0;
+            this.letterSpacing = 0;
+            this.outline = 0;
+            this.outlineColor = 0;
+            this.shadowOffset = new Vec2();
+            this.shadowColor = 0;
+        }
+        copy(source) {
+            this.size = source.size;
+            this.font = source.font;
+            this.color = source.color;
+            this.lineSpacing = source.lineSpacing;
+            this.letterSpacing = source.letterSpacing;
+            this.bold = source.bold;
+            this.underline = source.underline;
+            this.italic = source.italic;
+            this.strikethrough = source.strikethrough;
+            this.align = source.align;
+            this.outline = source.outline;
+            this.outlineColor = source.outlineColor;
+            this.shadowOffset.copy(source.shadowOffset);
+            this.shadowColor = source.shadowColor;
+        }
+    }
+
     var textMeasureHelper = document.createElement("div");
     textMeasureHelper.id = "text-helper";
     textMeasureHelper.style.position = "absolute";
@@ -16402,6 +16247,112 @@
         }
     }
 
+    var isAnyEditing = false;
+    class InputTextField extends UIElement {
+        constructor() {
+            super();
+            this._textFormat = new TextFormat();
+            this._text = "";
+            this._cursor = "auto";
+            this._singleLine = true;
+        }
+        init() {
+            super.init();
+            this.createElement();
+            this.$owner.on("focus_in", () => {
+                this._input.focus();
+            });
+        }
+        get textFormat() {
+            return this._textFormat;
+        }
+        applyFormat() {
+            let fontName = this._textFormat.font;
+            if (!fontName)
+                fontName = UIConfig.defaultFont;
+            this._input.style.textAlign = this._textFormat.align;
+            this._input.style.verticalAlign = this._textFormat.verticalAlign;
+            this._input.style.fontSize = this._textFormat.size + "px";
+            this._input.style.fontFamily = fontName;
+            this._input.style.color = convertToHtmlColor(this._textFormat.color);
+        }
+        get text() {
+            this._text = this._input.value;
+            return this._text;
+        }
+        set text(value) {
+            this._text = value;
+            this._input.value = this._text;
+        }
+        get singleLine() {
+            return this._singleLine;
+        }
+        set singleLine(value) {
+            if (this._singleLine != value) {
+                this._singleLine = value;
+                this.createElement();
+            }
+        }
+        createElement() {
+            let old = this._input;
+            if (old)
+                this.removeChild(old);
+            let e;
+            if (this._singleLine) {
+                e = document.createElement("input");
+            }
+            else {
+                e = document.createElement("textarea");
+            }
+            this._input = e;
+            if (e instanceof HTMLInputElement) {
+                if (this._password)
+                    e.type = "password";
+                else
+                    e.type = "text";
+            }
+            e.value = this._text;
+            e.readOnly = old ? old.readOnly : false;
+            e.spellcheck = false;
+            e.addEventListener("focus", () => { isAnyEditing = true; this.stage.setFocus(this); });
+            e.addEventListener("blur", () => { isAnyEditing = false; });
+            e.addEventListener("input", () => { this.$owner.emit("changed"); });
+            this.appendChild(this._input);
+        }
+        setPromptText(value) {
+            this._input.placeholder = defaultParser.parse(value, true);
+        }
+        setMaxLength(value) {
+            if (value > 0)
+                this._input.maxLength = value;
+            else
+                this._input.maxLength = 524288;
+        }
+        setKeyboardType(keyboardType) {
+        }
+        setRestrict(value) {
+        }
+        get editable() {
+            return !this._input.readOnly;
+        }
+        set editable(value) {
+            this._input.readOnly = !value;
+        }
+        get password() {
+            return this._password;
+        }
+        set password(value) {
+            if (this._password != value) {
+                this._password = value;
+                if (this._input instanceof HTMLInputElement)
+                    this._input.type = value ? "password" : "text";
+            }
+        }
+        setSelection(start, end) {
+            this._input.setSelectionRange(start, end);
+        }
+    }
+
     class Shape extends UIElement {
         constructor() {
             super();
@@ -16424,34 +16375,34 @@
         drawRect(lineWidth, lineColor, fillColor) {
             this._type = 1;
             if (lineColor.a != 0)
-                this.style.border = lineWidth + "px solid " + lineColor.getHexString();
+                this.style.border = lineWidth + "px solid " + lineColor.toStyleString();
             else
                 this.style.border = "";
             this._color = fillColor.getHex();
             if (fillColor.a != 0)
-                this.style.backgroundColor = fillColor.getHexString();
+                this.style.backgroundColor = fillColor.toStyleString();
             else
                 this.style.backgroundColor = "transparent";
             this.onSizeChanged();
         }
         drawRoundRect(lineWidth, lineColor, fillColor, topLeftRadius, topRightRadius, bottomLeftRadius, bottomRightRadius) {
             this._type = 2;
-            this.style.border = lineWidth + "px solid " + lineColor.getHexString();
+            this.style.border = lineWidth + "px solid " + lineColor.toStyleString();
             this.style.borderRadius = topLeftRadius + "px " + topRightRadius + "px " + bottomRightRadius + "px " + bottomLeftRadius + "px";
             this._color = fillColor.getHex();
             if (fillColor.a != 0)
-                this.style.backgroundColor = fillColor.getHexString();
+                this.style.backgroundColor = fillColor.toStyleString();
             else
                 this.style.backgroundColor = "transparent";
             this.onSizeChanged();
         }
         drawEllipse(lineWidth, lineColor, fillColor, startDegree, endDegree) {
             this._type = 3;
-            this.style.border = lineWidth + "px solid " + lineColor.getHexString();
+            this.style.border = lineWidth + "px solid " + lineColor.toStyleString();
             this.style.borderRadius = this._contentRect.width + "px / " + this._contentRect.height + "px";
             this._color = fillColor.getHex();
             if (fillColor.a != 0)
-                this.style.backgroundColor = fillColor.getHexString();
+                this.style.backgroundColor = fillColor.toStyleString();
             else
                 this.style.backgroundColor = "transparent";
             this.onSizeChanged();
@@ -16864,6 +16815,7 @@
 
     const clickTestThreshold = 10;
     const maxPointer = 10;
+    var anyPointerInput = 0;
     class Stage extends UIElement {
         constructor() {
             super();
@@ -16876,6 +16828,9 @@
             this._focusInChain = [];
             this._focusHistory = [];
             this.is_stage = true;
+        }
+        static get anyInput() {
+            return anyPointerInput > 0 || isAnyEditing;
         }
         setWindow(ownerWindow) {
             this._window = ownerWindow;
@@ -16916,7 +16871,6 @@
                 overflow : scroll;
                 outline : none;
                 border : 0px;
-                padding : 0px;
                 margin : 0px;
                 position : absolute;
                 background : transparent;
@@ -16925,7 +16879,7 @@
             }
 
             .fgui-stage input[type=text]:focus {
-                outline: none;
+                outline : none;
             }
 
             .fgui-stage textarea {
@@ -16933,7 +16887,7 @@
                 overflow : scroll;
                 outline : none;
                 border : 0px;
-                padding : 0px;
+                padding : 0px 4px 0px 4px;
                 margin : 0px;
                 position : absolute;
                 background : transparent;
@@ -17003,14 +16957,14 @@
             let pointer = this.getPointer(pointerId);
             if (pointer.captors.indexOf(target) == -1)
                 pointer.captors.push(target);
-            this.setPointerCapture(pointerId);
         }
         removePointerMonitor(target) {
             for (let j = 0; j < maxPointer; j++) {
                 let pointer = this._pointers[j];
                 let i = pointer.captors.indexOf(target);
-                if (i != -1)
+                if (i != -1) {
                     pointer.captors[i] = null;
+                }
             }
         }
         cancelClick(pointerId) {
@@ -17025,17 +16979,17 @@
             this.setLastInput(ev);
             let f = this.focusedElement;
             if (f)
-                f.bubbleEvent("key_down");
+                f.bubbleEvent(f, "key_down");
             else
-                this.$owner.emit("key_down");
+                this.bubbleEvent(this, "key_down");
         }
         onKeyup(ev) {
             this.setLastInput(ev);
             let f = this.focusedElement;
             if (f)
-                f.bubbleEvent("key_up");
+                f.bubbleEvent(f, "key_up");
             else
-                this.$owner.emit("key_up");
+                this.bubbleEvent(this, "key_up");
         }
         setLastInput(ev) {
             lastInput.altKey = ev.altKey;
@@ -17044,6 +16998,10 @@
             lastInput.commandKey = ev.metaKey;
             lastInput.keyCode = ev.code;
             lastInput.key = ev.key;
+            lastInput.button = 0;
+            lastInput.holdTime = 0;
+            lastInput.clickCount = 0;
+            lastInput.mouseWheelDelta = 0;
         }
         //Mouse/Touch Handle -----------------
         handlePointer(ev, type) {
@@ -17097,7 +17055,7 @@
                         if ((e instanceof UIElement) && !e.onStage)
                             pointer.captors[i] = null;
                     }
-                    this.bubbleEvent("pointer_move", null, pointer.captors);
+                    this.bubbleEvent(ev.target, "pointer_move", null, pointer.captors);
                 }
                 else
                     this.$owner.emit("pointer_move");
@@ -17107,6 +17065,7 @@
             if (type == 0) {
                 if (!pointer.began) {
                     this._touchCount++;
+                    anyPointerInput++;
                     pointer.began = true;
                     pointer.clickCancelled = false;
                     pointer.downX = pointer.x;
@@ -17124,14 +17083,13 @@
                     pointer.button = ev.button;
                     this.setFocus(pointer.target);
                     this.setLastPointer(pointer);
-                    pointer.target.bubbleEvent("pointer_down");
+                    pointer.target.bubbleEvent(ev.target, "pointer_down", ev.target);
                 }
             }
             else if (type == 1 || type == 3) {
                 if (pointer.began) {
                     this._touchCount--;
-                    if (pointer.captors.length > 0)
-                        this.releasePointerCapture(pointer.pointerId);
+                    anyPointerInput--;
                     pointer.began = false;
                     let now = performance.now();
                     if (pointer.downTargets.length == 0
@@ -17167,25 +17125,28 @@
                         let len = pointer.captors.length;
                         for (let i = 0; i < len; i++) {
                             let e = pointer.captors[i];
-                            if ((e instanceof UIElement) && !e.onStage)
-                                pointer.captors[i] = null;
+                            if (e instanceof UIElement) {
+                                if (!e.onStage)
+                                    pointer.captors[i] = null;
+                            }
                         }
-                        bubbleFrom.bubbleEvent("pointer_up", null, pointer.captors);
+                        bubbleFrom.bubbleEvent(ev.target, "pointer_up", null, pointer.captors);
                         pointer.captors.length = 0;
                     }
                     else
-                        bubbleFrom.bubbleEvent("pointer_up");
+                        bubbleFrom.bubbleEvent(ev.target, "pointer_up");
                     if (type != 3) {
                         let clickTarget = this.clickTest(pointer);
                         if (clickTarget) {
                             this.setLastPointer(pointer);
                             if (ev.button == 1 || ev.button == 2)
-                                clickTarget.bubbleEvent("right_click");
+                                clickTarget.bubbleEvent(ev.target, "right_click");
                             else
-                                clickTarget.bubbleEvent("click");
+                                clickTarget.bubbleEvent(ev.target, "click");
                         }
                     }
                     pointer.button = -1;
+                    //on touch device, trigger rollout on pointer up
                     if (ev.pointerType != "mouse") {
                         pointer.target = null;
                         this.handleRollOver(pointer);
@@ -17237,9 +17198,9 @@
             pointer.altKey = ev.altKey;
             pointer.ctrlKey = ev.ctrlKey;
             pointer.commandKey = ev.metaKey;
-            pointer.mouseWheelDelta = ev.deltaY;
+            pointer.mouseWheelDelta = ev.deltaY / 20;
             this.setLastPointer(pointer);
-            this._touchTarget.bubbleEvent("mouse_wheel");
+            this._touchTarget.bubbleEvent(ev.target, "mouse_wheel");
             pointer.mouseWheelDelta = 0;
         }
         handleContextMenu(ev) {
@@ -17286,14 +17247,15 @@
                 }
                 this._rollOutChain.length = 0;
             }
-            let cursor;
+            let cursor = null;
             cnt = this._rollOverChain.length;
             if (cnt > 0) {
                 for (let i = 0; i < cnt; i++) {
                     let obj = this._rollOverChain[i];
                     if (obj.onStage && obj.$owner) {
                         obj.$owner.emit("roll_over");
-                        cursor = obj.cursor;
+                        if (cursor == null && obj.cursor)
+                            cursor = obj.cursor;
                     }
                 }
                 this._rollOverChain.length = 0;
@@ -17331,7 +17293,7 @@
             let e = event.currentTarget;
             while (e) {
                 if (e instanceof UIElement) {
-                    e.bubbleEvent("click_link", href);
+                    e.bubbleEvent(e, "click_link", href);
                     break;
                 }
                 e = e.parentElement;
@@ -17423,6 +17385,8 @@
                 }
                 this._focusInChain.length = 0;
             }
+            if (newFocus instanceof InputTextField)
+                this.style.cursor = "auto";
         }
         onFocusRemoving(sender) {
             this._nextFocus = sender;
@@ -17531,6 +17495,7 @@
     exports.Margin = Margin;
     exports.MovieClip = MovieClip;
     exports.PackageItem = PackageItem;
+    exports.Pool = Pool;
     exports.PopupMenu = PopupMenu;
     exports.Rect = Rect;
     exports.ScrollPane = ScrollPane;
