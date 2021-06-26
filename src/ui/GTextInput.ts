@@ -3,7 +3,6 @@ import { InputTextField } from "../core/InputTextField";
 import { GObject } from "./GObject";
 import { TextFormat } from "../core/TextFormat";
 import { ObjectPropID } from "./FieldTypes";
-import { UIElement } from "../core/UIElement";
 
 export class GTextInput extends GObject {
     protected _element: InputTextField;

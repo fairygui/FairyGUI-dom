@@ -10487,8 +10487,8 @@
             this._valign = "top";
         }
         createElement() {
-            this._element = createUIElement("fgui-div");
-            this._content = createUIElement("fgui-movieclip", this);
+            this._element = createUIElement("fgui-div", this);
+            this._content = createUIElement("fgui-movieclip");
             this._content.setNotInteractable();
             this._element.addChild(this._content);
         }

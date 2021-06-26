@@ -1,4 +1,3 @@
-import { UIElement } from "../core/UIElement";
 import { MovieClip } from "../core/MovieClip";
 import { Vec2 } from "../math/Vec2";
 import { ByteBuffer } from "../utils/ByteBuffer";
@@ -30,8 +29,8 @@ export class GLoader extends GObject {
     }
 
     protected createElement(): void {
-        this._element = createUIElement("fgui-div");
-        this._content = createUIElement("fgui-movieclip", this);
+        this._element = createUIElement("fgui-div", this);
+        this._content = createUIElement("fgui-movieclip");
         this._content.setNotInteractable();
         this._element.addChild(this._content);
     }
