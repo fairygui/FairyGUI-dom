@@ -15,31 +15,32 @@ export class GTreeNode {
     private _cell: GComponent;
     private _indentObj: GObject;
     private _resURL: string;
+    private _leafController: Controller;
+    private _isFolder: boolean;
 
     public onExpanded?: () => void;
 
     /** @internal */
     public _cellFromPool?: boolean;
 
-    constructor(hasChild: boolean, resURL?: string) {
+    constructor(isFolder?: boolean, resURL?: string) {
+        this._isFolder = isFolder;
         this._resURL = resURL;
-        if (hasChild)
-            this._children = new Array<GTreeNode>();
+        this._children = [];
     }
 
     public set expanded(value: boolean) {
-        if (this._children == null)
-            return;
-
         if (this._expanded != value) {
             this._expanded = value;
-            if (this._tree) {
+
+            if (this._tree && this.isFolder) {
                 if (this._expanded)
                     this._tree._afterExpanded(this);
                 else
                     this._tree._afterCollapsed(this);
             }
-            else if (this._cell) {
+
+            if (this._cell) {
                 let cc = this._cell.getController("expanded");
                 if (cc) {
                     cc.selectedIndex = this.expanded ? 1 : 0;
@@ -53,7 +54,15 @@ export class GTreeNode {
     }
 
     public get isFolder(): boolean {
-        return this._children != null;
+        return this._isFolder || this._children.length > 0;
+    }
+
+    public set isFolder(value: boolean) {
+        if (this._isFolder != value) {
+            this._isFolder = value;
+            if (this._leafController)
+                this._leafController.selectedIndex = this.isFolder ? 0 : 1;
+        }
     }
 
     public get parent(): GTreeNode {
@@ -110,12 +119,11 @@ export class GTreeNode {
             cc.selectedIndex = this.expanded ? 1 : 0;
         }
 
-        cc = this._cell.getController("leaf");
-        if (cc)
-            cc.selectedIndex = this.isFolder ? 0 : 1;
+        this._leafController = this._cell.getController("leaf");
+        if (this._leafController)
+            this._leafController.selectedIndex = this.isFolder ? 0 : 1;
 
-        if (this.isFolder)
-            this._cell.on("pointer_down", this.__cellMouseDown, this);
+        this._cell.on("pointer_down", this.__cellMouseDown, this);
     }
 
     public createCell() {
@@ -153,11 +161,13 @@ export class GTreeNode {
                 if (child._parent)
                     child._parent.removeChild(child);
 
-                var cnt: number = this._children.length;
-                if (index == cnt)
+                if (index == numChildren)
                     this._children.push(child);
                 else
                     this._children.splice(index, 0, child);
+
+                if (this.isFolder && this._leafController)
+                    this._leafController.selectedIndex = 0;
 
                 child._parent = this;
                 child._level = this._level + 1;
@@ -185,6 +195,9 @@ export class GTreeNode {
         if (index >= 0 && index < this.numChildren) {
             var child: GTreeNode = this._children[index];
             this._children.splice(index, 1);
+
+            if (!this.isFolder && this._leafController)
+                this._leafController.selectedIndex = 1;
 
             child._parent = null;
             if (this._tree) {
@@ -307,13 +320,11 @@ export class GTreeNode {
         if (this._tree && this._tree.treeNodeWillExpand && this._expanded)
             this._tree.treeNodeWillExpand(this, true);
 
-        if (this._children) {
-            var cnt: number = this._children.length;
-            for (var i: number = 0; i < cnt; i++) {
-                var node: GTreeNode = this._children[i];
-                node._level = this._level + 1;
-                node._setTree(value);
-            }
+        var cnt: number = this._children.length;
+        for (var i: number = 0; i < cnt; i++) {
+            var node: GTreeNode = this._children[i];
+            node._level = this._level + 1;
+            node._setTree(value);
         }
     }
 
@@ -323,7 +334,7 @@ export class GTreeNode {
     }
 
     private __cellMouseDown(evt: Event): void {
-        if (this._tree)
+        if (this._tree && this.isFolder)
             this._tree._expandedStatusInEvt = this._expanded;
     }
 }

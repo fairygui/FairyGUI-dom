@@ -182,10 +182,6 @@ export class GTree extends GList {
         if (this.treeNodeRender)
             this.treeNodeRender(node, node.cell);
 
-        var cc: Controller = node.cell.getController("expanded");
-        if (cc)
-            cc.selectedIndex = 1;
-
         if (node.cell.parent)
             this.checkChildren(node, this.getChildIndex(node.cell));
     }
@@ -205,10 +201,6 @@ export class GTree extends GList {
 
         if (this.treeNodeRender)
             this.treeNodeRender(node, node.cell);
-
-        var cc: Controller = node.cell.getController("expanded");
-        if (cc)
-            cc.selectedIndex = 0;
 
         if (node.cell.parent)
             this.hideFolderNode(node);
