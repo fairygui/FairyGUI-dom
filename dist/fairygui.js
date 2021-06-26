@@ -14540,25 +14540,23 @@
     var s_n = 0;
 
     class GTreeNode {
-        constructor(hasChild, resURL) {
+        constructor(isFolder, resURL) {
             this._expanded = false;
             this._level = 0;
+            this._isFolder = isFolder;
             this._resURL = resURL;
-            if (hasChild)
-                this._children = new Array();
+            this._children = [];
         }
         set expanded(value) {
-            if (this._children == null)
-                return;
             if (this._expanded != value) {
                 this._expanded = value;
-                if (this._tree) {
+                if (this._tree && this.isFolder) {
                     if (this._expanded)
                         this._tree._afterExpanded(this);
                     else
                         this._tree._afterCollapsed(this);
                 }
-                else if (this._cell) {
+                if (this._cell) {
                     let cc = this._cell.getController("expanded");
                     if (cc) {
                         cc.selectedIndex = this.expanded ? 1 : 0;
@@ -14570,7 +14568,14 @@
             return this._expanded;
         }
         get isFolder() {
-            return this._children != null;
+            return this._isFolder || this._children.length > 0;
+        }
+        set isFolder(value) {
+            if (this._isFolder != value) {
+                this._isFolder = value;
+                if (this._leafController)
+                    this._leafController.selectedIndex = this.isFolder ? 0 : 1;
+            }
         }
         get parent() {
             return this._parent;
@@ -14615,11 +14620,10 @@
                 cc.on("status_changed", this.__expandedStateChanged, this);
                 cc.selectedIndex = this.expanded ? 1 : 0;
             }
-            cc = this._cell.getController("leaf");
-            if (cc)
-                cc.selectedIndex = this.isFolder ? 0 : 1;
-            if (this.isFolder)
-                this._cell.on("pointer_down", this.__cellMouseDown, this);
+            this._leafController = this._cell.getController("leaf");
+            if (this._leafController)
+                this._leafController.selectedIndex = this.isFolder ? 0 : 1;
+            this._cell.on("pointer_down", this.__cellMouseDown, this);
         }
         createCell() {
             if (this._cell)
@@ -14648,11 +14652,12 @@
                 else {
                     if (child._parent)
                         child._parent.removeChild(child);
-                    var cnt = this._children.length;
-                    if (index == cnt)
+                    if (index == numChildren)
                         this._children.push(child);
                     else
                         this._children.splice(index, 0, child);
+                    if (this.isFolder && this._leafController)
+                        this._leafController.selectedIndex = 0;
                     child._parent = this;
                     child._level = this._level + 1;
                     child._setTree(this._tree);
@@ -14676,6 +14681,8 @@
             if (index >= 0 && index < this.numChildren) {
                 var child = this._children[index];
                 this._children.splice(index, 1);
+                if (!this.isFolder && this._leafController)
+                    this._leafController.selectedIndex = 1;
                 child._parent = null;
                 if (this._tree) {
                     child._setTree(null);
@@ -14772,13 +14779,11 @@
                 this._indentObj.width = (this._level - 1) * this._tree.indent;
             if (this._tree && this._tree.treeNodeWillExpand && this._expanded)
                 this._tree.treeNodeWillExpand(this, true);
-            if (this._children) {
-                var cnt = this._children.length;
-                for (var i = 0; i < cnt; i++) {
-                    var node = this._children[i];
-                    node._level = this._level + 1;
-                    node._setTree(value);
-                }
+            var cnt = this._children.length;
+            for (var i = 0; i < cnt; i++) {
+                var node = this._children[i];
+                node._level = this._level + 1;
+                node._setTree(value);
             }
         }
         __expandedStateChanged(evt) {
@@ -14786,7 +14791,7 @@
             this.expanded = cc.selectedIndex == 1;
         }
         __cellMouseDown(evt) {
-            if (this._tree)
+            if (this._tree && this.isFolder)
                 this._tree._expandedStatusInEvt = this._expanded;
         }
     }
@@ -14921,9 +14926,6 @@
                 return;
             if (this.treeNodeRender)
                 this.treeNodeRender(node, node.cell);
-            var cc = node.cell.getController("expanded");
-            if (cc)
-                cc.selectedIndex = 1;
             if (node.cell.parent)
                 this.checkChildren(node, this.getChildIndex(node.cell));
         }
@@ -14939,9 +14941,6 @@
                 return;
             if (this.treeNodeRender)
                 this.treeNodeRender(node, node.cell);
-            var cc = node.cell.getController("expanded");
-            if (cc)
-                cc.selectedIndex = 0;
             if (node.cell.parent)
                 this.hideFolderNode(node);
         }
@@ -15698,8 +15697,10 @@
                     str.push("" + this._rot);
                     str.push("deg) ");
                 }
-                if (str.length > 0)
+                if (str.length > 0) {
                     this.style.transform = str.join("");
+                    this.style.transformOrigin = this._pivot.x + "% " + this._pivot.y + "%";
+                }
                 else
                     this.style.transform = "none";
             });
@@ -16906,21 +16907,7 @@
             this.className = "fgui-stage";
             ownerWindow.addEventListener('keydown', this.onKeydown.bind(this));
             ownerWindow.addEventListener('keyup', this.onKeyup.bind(this));
-            ownerWindow.requestAnimationFrame(() => {
-                if (this._nextFocus != null) {
-                    if (this._nextFocus.onStage) {
-                        if (this._nextFocus.tabStopChildren) {
-                            if (this._nextFocus._lastFocus != null && this._nextFocus.isAncestorOf(this._nextFocus._lastFocus))
-                                this.setFocus(this._nextFocus._lastFocus);
-                            else
-                                this.setFocus(this._nextFocus);
-                        }
-                        else
-                            this.setFocus(this._nextFocus);
-                    }
-                    this._nextFocus = null;
-                }
-            });
+            ownerWindow.requestAnimationFrame(this.checkNextFocus.bind(this));
         }
         get window() {
             return this._window;
@@ -17301,8 +17288,13 @@
         }
         //Focus Manage -----------------
         get focusedElement() {
-            if (this._focused != null && !this._focused.onStage)
-                this._focused = null;
+            if (this._focused != null) {
+                if (!this._focused.onStage)
+                    this._focused = null;
+            }
+            else {
+                this.checkNextFocus();
+            }
             return this._focused;
         }
         validateFocus(container, child) {
@@ -17410,6 +17402,22 @@
                 }
             }
             this._focused = null;
+        }
+        checkNextFocus() {
+            if (this._nextFocus != null) {
+                let nextFocus = this._nextFocus;
+                this._nextFocus = null;
+                if (nextFocus.onStage) {
+                    if (nextFocus.tabStopChildren) {
+                        if (nextFocus._lastFocus != null && nextFocus.isAncestorOf(nextFocus._lastFocus))
+                            this.setFocus(nextFocus._lastFocus);
+                        else
+                            this.setFocus(nextFocus);
+                    }
+                    else
+                        this.setFocus(nextFocus);
+                }
+            }
         }
     }
     class PointerInfo {

@@ -185,8 +185,10 @@ export class UIElement extends HTMLDivElement {
                 str.push("" + this._rot);
                 str.push("deg) ");
             }
-            if (str.length > 0)
+            if (str.length > 0) {
                 this.style.transform = str.join("");
+                this.style.transformOrigin = this._pivot.x + "% " + this._pivot.y + "%";
+            }
             else
                 this.style.transform = "none";
         });
