@@ -127,21 +127,7 @@ export class Stage extends UIElement implements IStage {
         ownerWindow.addEventListener('keydown', this.onKeydown.bind(this));
         ownerWindow.addEventListener('keyup', this.onKeyup.bind(this));
 
-        ownerWindow.requestAnimationFrame(() => {
-            if (this._nextFocus != null) {
-                if (this._nextFocus.onStage) {
-                    if (this._nextFocus.tabStopChildren) {
-                        if (this._nextFocus._lastFocus != null && this._nextFocus.isAncestorOf(this._nextFocus._lastFocus))
-                            this.setFocus(this._nextFocus._lastFocus);
-                        else
-                            this.setFocus(this._nextFocus);
-                    }
-                    else
-                        this.setFocus(this._nextFocus);
-                }
-                this._nextFocus = null;
-            }
-        });
+        ownerWindow.requestAnimationFrame(this.checkNextFocus.bind(this));
     }
 
     public get window(): Window {
@@ -588,8 +574,14 @@ export class Stage extends UIElement implements IStage {
     //Focus Manage -----------------
 
     public get focusedElement(): UIElement {
-        if (this._focused != null && !this._focused.onStage)
-            this._focused = null;
+        if (this._focused != null) {
+            if (!this._focused.onStage)
+                this._focused = null;
+        }
+        else {
+            this.checkNextFocus();
+        }
+
         return this._focused;
     }
 
@@ -717,6 +709,23 @@ export class Stage extends UIElement implements IStage {
         }
 
         this._focused = null;
+    }
+
+    private checkNextFocus() {
+        if (this._nextFocus != null) {
+            let nextFocus = this._nextFocus;
+            this._nextFocus = null;
+            if (nextFocus.onStage) {
+                if (nextFocus.tabStopChildren) {
+                    if (nextFocus._lastFocus != null && nextFocus.isAncestorOf(nextFocus._lastFocus))
+                        this.setFocus(nextFocus._lastFocus);
+                    else
+                        this.setFocus(nextFocus);
+                }
+                else
+                    this.setFocus(nextFocus);
+            }
+        }
     }
 }
 
