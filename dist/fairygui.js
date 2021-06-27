@@ -15699,7 +15699,7 @@
                 }
                 if (str.length > 0) {
                     this.style.transform = str.join("");
-                    this.style.transformOrigin = this._pivot.x + "% " + this._pivot.y + "%";
+                    this.style.transformOrigin = (this._pivot.x * 100) + "% " + (this._pivot.y * 100) + "%";
                 }
                 else
                     this.style.transform = "none";
