@@ -20,6 +20,6 @@ export interface IStage extends UIElement {
 
 declare global {
     interface Window {
-        stage: IStage;
+        fguiStage: IStage;
     }
 }

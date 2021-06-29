@@ -45,7 +45,7 @@ export class Stage extends UIElement implements IStage {
 
     public setWindow(ownerWindow: Window) {
         this._window = ownerWindow;
-        ownerWindow.stage = this;
+        ownerWindow.fguiStage = this;
         let doc = ownerWindow.document;
         doc.body.appendChild(this);
 

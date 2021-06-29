@@ -372,7 +372,7 @@ export class UIElement extends HTMLDivElement {
             p = p.parentElement;
         }
 
-        return window.stage;
+        return window.fguiStage;
     }
 
     public globalToLocal(x: number, y: number, result?: Vec2): Vec2 {

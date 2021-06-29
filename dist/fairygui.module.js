@@ -15868,7 +15868,7 @@ class UIElement extends HTMLDivElement {
                 return p;
             p = p.parentElement;
         }
-        return window.stage;
+        return window.fguiStage;
     }
     globalToLocal(x, y, result) {
         let rect = this.getBoundingClientRect();
@@ -16850,7 +16850,7 @@ class Stage extends UIElement {
     }
     setWindow(ownerWindow) {
         this._window = ownerWindow;
-        ownerWindow.stage = this;
+        ownerWindow.fguiStage = this;
         let doc = ownerWindow.document;
         doc.body.appendChild(this);
         this._touchscreen = ('ontouchstart' in ownerWindow) ||
