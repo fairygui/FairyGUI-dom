@@ -105,7 +105,9 @@ export class TextField extends UIElement {
         else
             this._span.innerText = this._text;
 
-        if (!this.isConnected) {
+        let usingHelper: boolean;
+        if (!this.isConnected || (this._text.length > 0 && this._span.clientWidth == 0)) {
+            usingHelper = true;
             if (!textMeasureHelper.parentElement)
                 document.body.appendChild(textMeasureHelper);
             textMeasureHelper.appendChild(this._span);
@@ -124,7 +126,7 @@ export class TextField extends UIElement {
                 this.$owner.height = this._textSize.y;
         }
 
-        if (!this.isConnected)
+        if (usingHelper)
             this.appendChild(this._span);
 
         this._span.style.width = this._contentRect.width + "px";

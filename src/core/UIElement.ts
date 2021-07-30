@@ -187,7 +187,10 @@ export class UIElement extends HTMLDivElement {
             }
             if (str.length > 0) {
                 this.style.transform = str.join("");
-                this.style.transformOrigin = (this._pivot.x*100) + "% " + (this._pivot.y*100) + "%";
+                if (this._flipX || this._flipY)
+                    this.style.transformOrigin = "%50 %50";
+                else
+                    this.style.transformOrigin = (this._pivot.x * 100) + "% " + (this._pivot.y * 100) + "%";
             }
             else
                 this.style.transform = "none";
@@ -269,7 +272,7 @@ export class UIElement extends HTMLDivElement {
         }
     }
 
-    private updateTouchableFlag(): void {
+    protected updateTouchableFlag(): void {
         let str: string;
         if (!this._touchable || !this._opaque || this._touchDisabled)
             str = "none";
@@ -344,8 +347,10 @@ export class UIElement extends HTMLDivElement {
     public set tabStop(value: boolean) {
         if (this._tabStop != value) {
             this._tabStop = value;
-            if (value)
+            if (value) {
                 this.tabIndex = 0;
+                this.addEventListener("focus", () => { if (this._tabStop) this.stage.setFocus(this, true); });
+            }
             else
                 this.tabIndex = null;
         }

@@ -15699,7 +15699,10 @@
                 }
                 if (str.length > 0) {
                     this.style.transform = str.join("");
-                    this.style.transformOrigin = (this._pivot.x * 100) + "% " + (this._pivot.y * 100) + "%";
+                    if (this._flipX || this._flipY)
+                        this.style.transformOrigin = "%50 %50";
+                    else
+                        this.style.transformOrigin = (this._pivot.x * 100) + "% " + (this._pivot.y * 100) + "%";
                 }
                 else
                     this.style.transform = "none";
@@ -15831,8 +15834,11 @@
         set tabStop(value) {
             if (this._tabStop != value) {
                 this._tabStop = value;
-                if (value)
+                if (value) {
                     this.tabIndex = 0;
+                    this.addEventListener("focus", () => { if (this._tabStop)
+                        this.stage.setFocus(this, true); });
+                }
                 else
                     this.tabIndex = null;
             }
@@ -16155,7 +16161,9 @@
                 this._span.innerHTML = this._text;
             else
                 this._span.innerText = this._text;
-            if (!this.isConnected) {
+            let usingHelper;
+            if (!this.isConnected || (this._text.length > 0 && this._span.clientWidth == 0)) {
+                usingHelper = true;
                 if (!textMeasureHelper.parentElement)
                     document.body.appendChild(textMeasureHelper);
                 textMeasureHelper.appendChild(this._span);
@@ -16172,7 +16180,7 @@
                 if (this.$owner)
                     this.$owner.height = this._textSize.y;
             }
-            if (!this.isConnected)
+            if (usingHelper)
                 this.appendChild(this._span);
             this._span.style.width = this._contentRect.width + "px";
             if (this._textFormat.verticalAlign == "top")
@@ -16315,10 +16323,16 @@
             e.value = this._text;
             e.readOnly = old ? old.readOnly : false;
             e.spellcheck = false;
-            e.addEventListener("focus", () => { isAnyEditing = true; this.stage.setFocus(this); });
+            e.addEventListener("focus", (evt) => { isAnyEditing = true; this.stage.setFocus(this, true); });
             e.addEventListener("blur", () => { isAnyEditing = false; });
             e.addEventListener("input", () => { this.$owner.emit("changed"); });
             this.appendChild(this._input);
+        }
+        updateTouchableFlag() {
+            super.updateTouchableFlag();
+            if (isAnyEditing)
+                this._input.setSelectionRange(0, 0);
+            this._input.disabled = this.style.pointerEvents == "none";
         }
         setPromptText(value) {
             this._input.placeholder = defaultParser.parse(value, true);

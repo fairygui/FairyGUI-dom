@@ -94,10 +94,18 @@ export class InputTextField extends UIElement {
         e.value = this._text;
         e.readOnly = old ? old.readOnly : false;
         e.spellcheck = false;
-        e.addEventListener("focus", () => { isAnyEditing = true; this.stage.setFocus(this); });
+        e.addEventListener("focus", (evt: Event) => { isAnyEditing = true; this.stage.setFocus(this, true); });
         e.addEventListener("blur", () => { isAnyEditing = false; });
         e.addEventListener("input", () => { this.$owner.emit("changed"); });
         this.appendChild(this._input);
+    }
+
+    protected updateTouchableFlag(): void {
+        super.updateTouchableFlag();
+
+        if (isAnyEditing)
+            this._input.setSelectionRange(0, 0);
+        this._input.disabled = this.style.pointerEvents == "none";
     }
 
     public setPromptText(value: string) {
