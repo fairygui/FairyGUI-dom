@@ -17512,6 +17512,17 @@
     exports.GTween = GTween;
     exports.GTweener = GTweener;
     exports.GWindow = GWindow;
+    exports.GearAnimation = GearAnimation;
+    exports.GearBase = GearBase;
+    exports.GearColor = GearColor;
+    exports.GearDisplay = GearDisplay;
+    exports.GearDisplay2 = GearDisplay2;
+    exports.GearFontSize = GearFontSize;
+    exports.GearIcon = GearIcon;
+    exports.GearLook = GearLook;
+    exports.GearSize = GearSize;
+    exports.GearText = GearText;
+    exports.GearXY = GearXY;
     exports.Image = Image;
     exports.InputTextField = InputTextField;
     exports.Margin = Margin;
