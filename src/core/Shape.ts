@@ -88,9 +88,7 @@ export class Shape extends UIElement {
     }
 
     protected onSizeChanged(): void {
-        if (this._type != 0) {
-            this.style.width = this._contentRect.width + "px";
-            this.style.height = this._contentRect.height + "px";
-        }
+        this.style.width = this._contentRect.width + "px";
+        this.style.height = this._contentRect.height + "px";
     }
 }

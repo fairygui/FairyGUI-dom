@@ -7,6 +7,7 @@ export class Color {
 	static YELLOW: Color = new Color(1, 1, 0, 1);
 	static GRAY: Color = new Color(0.5, 0.5, 0.5, 1);
 	static BLACK: Color = new Color(0, 0, 0, 1);
+	static WHITE: Color = new Color(1, 1, 1, 1);
 
 	public r: number;
 	public g: number;
