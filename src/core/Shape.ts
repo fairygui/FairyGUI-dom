@@ -15,8 +15,9 @@ export class Shape extends UIElement {
 
     public init() {
         super.init();
-        
+
         this.style.boxSizing = "border-box";
+        this.setNotInteractable();
     }
 
     public get color(): number {
@@ -30,7 +31,7 @@ export class Shape extends UIElement {
     }
 
     public drawRect(lineWidth: number, lineColor: Color, fillColor: Color) {
-        this._type = 1;
+        this.setType(1);
         if (lineColor.a != 0)
             this.style.border = lineWidth + "px solid " + lineColor.toStyleString();
         else
@@ -40,12 +41,11 @@ export class Shape extends UIElement {
             this.style.backgroundColor = fillColor.toStyleString();
         else
             this.style.backgroundColor = "transparent";
-        this.onSizeChanged();
     }
 
     public drawRoundRect(lineWidth: number, lineColor: Color, fillColor: Color,
         topLeftRadius: number, topRightRadius: number, bottomLeftRadius: number, bottomRightRadius: number) {
-        this._type = 2;
+        this.setType(2);
         this.style.border = lineWidth + "px solid " + lineColor.toStyleString();
         this.style.borderRadius = topLeftRadius + "px " + topRightRadius + "px " + bottomRightRadius + "px " + bottomLeftRadius + "px";
         this._color = fillColor.getHex();
@@ -53,11 +53,10 @@ export class Shape extends UIElement {
             this.style.backgroundColor = fillColor.toStyleString();
         else
             this.style.backgroundColor = "transparent";
-        this.onSizeChanged();
     }
 
     public drawEllipse(lineWidth: number, lineColor: Color, fillColor: Color, startDegree?: number, endDegree?: number) {
-        this._type = 3;
+        this.setType(3);
         this.style.border = lineWidth + "px solid " + lineColor.toStyleString();
         this.style.borderRadius = this._contentRect.width + "px / " + this._contentRect.height + "px";
         this._color = fillColor.getHex();
@@ -65,26 +64,36 @@ export class Shape extends UIElement {
             this.style.backgroundColor = fillColor.toStyleString();
         else
             this.style.backgroundColor = "transparent";
-        this.onSizeChanged();
     }
 
     public drawPolygon(points: Array<number>, fillColor: Color, lineWidth?: number, lineColor?: Color) {
-        this._type = 4;
-        this.onSizeChanged();
+        this.setType(4);
     }
 
     public drawRegularPolygon(sides: number, lineWidth: number, centerColor: Color, lineColor: Color,
         fillColor: Color, rotation: number, distances: Array<number>) {
-        this._type = 5;
-        this.onSizeChanged();
+        this.setType(5);
     }
 
     public clear() {
-        this._type = 0;
-        this.style.backgroundColor = "transparent";
-        this.style.border = "0px solid";
-        this.style.width = "0px";
-        this.style.height = "0px";
+        this.setType(0);
+    }
+
+    public setType(type: number) {
+        if (this._type == 0) {
+            if (type != 0) {
+                this._touchDisabled = false;
+                this.updateTouchableFlag();
+            }
+        }
+        else {
+            if (type == 0) {
+                this.style.backgroundColor = "transparent";
+                this.style.border = "0px solid";
+                this.setNotInteractable();
+            }
+        }
+        this._type = type;
     }
 
     protected onSizeChanged(): void {

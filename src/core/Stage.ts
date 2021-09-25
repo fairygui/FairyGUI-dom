@@ -51,7 +51,7 @@ export class Stage extends UIElement implements IStage {
 
         this._touchscreen = ('ontouchstart' in ownerWindow) ||
             (navigator.maxTouchPoints > 0) ||
-            (navigator.msMaxTouchPoints > 0);
+            ((<any>navigator).msMaxTouchPoints > 0);
 
         this._electron = window && window.process && window.process.versions['electron'] != undefined;
 
