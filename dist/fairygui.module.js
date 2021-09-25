@@ -16175,8 +16175,12 @@ class TextField extends UIElement {
         this._updatingSize = true;
         if (this._layoutStyleChanged)
             this.setLayoutStyle();
-        if (this._autoSize == AutoSizeType.Both)
-            this._span.style.width = "";
+        if (this._autoSize == AutoSizeType.Both) {
+            if (this.maxWidth > 0)
+                this._span.style.width = this.maxWidth + "px";
+            else
+                this._span.style.width = "";
+        }
         if (this._html)
             this._span.innerHTML = this._text;
         else
