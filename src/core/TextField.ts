@@ -19,10 +19,11 @@ export class TextField extends UIElement {
     protected _autoSize: AutoSizeType;
     protected _singleLine: boolean;
     protected _html: boolean;
-    protected _maxWidth: number;
+    protected _maxWidth: number = 0;
     protected _updatingSize: boolean;
     protected _span: HTMLSpanElement;
     protected _textSize: Vec2;
+    protected _layoutStyleChanged: boolean = true;
 
     constructor() {
         super();
@@ -73,7 +74,7 @@ export class TextField extends UIElement {
     }
 
     public set text(value: string) {
-        if (this._text.length < 20 && this._text == value && !this._html)
+        if (!this._layoutStyleChanged && this._text.length < 20 && this._text == value && !this._html)
             return;
 
         this._text = value;
@@ -96,6 +97,8 @@ export class TextField extends UIElement {
 
     private applyText(): void {
         this._updatingSize = true;
+        if (this._layoutStyleChanged)
+            this.setLayoutStyle();
 
         if (this._autoSize == AutoSizeType.Both)
             this._span.style.width = "";
@@ -148,11 +151,7 @@ export class TextField extends UIElement {
     public set autoSize(value: AutoSizeType) {
         if (this._autoSize != value) {
             this._autoSize = value;
-
-            if (this._singleLine || this._autoSize == AutoSizeType.Both)
-                this._span.style.whiteSpace = "nowrap";
-            else
-                this._span.style.whiteSpace = "";
+            this._layoutStyleChanged = true;
 
             if (this._autoSize == AutoSizeType.Both) {
                 this._span.style.width = "";
@@ -178,11 +177,7 @@ export class TextField extends UIElement {
     public set singleLine(value: boolean) {
         if (this._singleLine != value) {
             this._singleLine = value;
-
-            if (this._singleLine || this._autoSize == AutoSizeType.Both)
-                this._span.style.whiteSpace = "nowrap";
-            else
-                this._span.style.whiteSpace = "";
+            this._layoutStyleChanged = true;
         }
     }
 
@@ -193,13 +188,7 @@ export class TextField extends UIElement {
     public set maxWidth(value: number) {
         if (this._maxWidth != value) {
             this._maxWidth = value;
-
-            if (this._maxWidth > 0)
-                this._span.style.maxWidth = this._maxWidth + "px";
-            else if (this._autoSize != AutoSizeType.Both)
-                this._span.style.maxWidth = this._contentRect.width + "px";
-            else if (this._span.style.maxWidth)
-                this._span.style.maxWidth = "";
+            this._layoutStyleChanged = true;
         }
     }
 
@@ -215,6 +204,26 @@ export class TextField extends UIElement {
                 this._span.style.maxWidth = this._contentRect.width + "px";
                 this._span.style.width = this._contentRect.width + "px";
             }
+        }
+    }
+
+    private setLayoutStyle() {
+        this._layoutStyleChanged = false;
+        if (this._maxWidth > 0) {
+            this._span.style.maxWidth = this._maxWidth + "px";
+            this._span.style.whiteSpace = "";
+            this._span.style.wordBreak = "break-word";
+        }
+        else if (this._autoSize == AutoSizeType.Both || this._singleLine) {
+            if (this._span.style.maxWidth)
+                this._span.style.maxWidth = "";
+            this._span.style.whiteSpace = "nowrap";
+            this._span.style.wordBreak = "normal";
+        }
+        else {
+            this._span.style.maxWidth = this._contentRect.width + "px";
+            this._span.style.whiteSpace = "";
+            this._span.style.wordBreak = "break-word";
         }
     }
 }

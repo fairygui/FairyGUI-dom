@@ -16114,6 +16114,8 @@ textMeasureHelper.style.width = "10000px";
 class TextField extends UIElement {
     constructor() {
         super();
+        this._maxWidth = 0;
+        this._layoutStyleChanged = true;
         this._textFormat = new TextFormat();
         this._text = "";
         this._textSize = new Vec2();
@@ -16153,7 +16155,7 @@ class TextField extends UIElement {
         return this._text;
     }
     set text(value) {
-        if (this._text.length < 20 && this._text == value && !this._html)
+        if (!this._layoutStyleChanged && this._text.length < 20 && this._text == value && !this._html)
             return;
         this._text = value;
         this._html = false;
@@ -16171,6 +16173,8 @@ class TextField extends UIElement {
     }
     applyText() {
         this._updatingSize = true;
+        if (this._layoutStyleChanged)
+            this.setLayoutStyle();
         if (this._autoSize == AutoSizeType.Both)
             this._span.style.width = "";
         if (this._html)
@@ -16213,10 +16217,7 @@ class TextField extends UIElement {
     set autoSize(value) {
         if (this._autoSize != value) {
             this._autoSize = value;
-            if (this._singleLine || this._autoSize == AutoSizeType.Both)
-                this._span.style.whiteSpace = "nowrap";
-            else
-                this._span.style.whiteSpace = "";
+            this._layoutStyleChanged = true;
             if (this._autoSize == AutoSizeType.Both) {
                 this._span.style.width = "";
                 this._span.style.overflow = "";
@@ -16238,10 +16239,7 @@ class TextField extends UIElement {
     set singleLine(value) {
         if (this._singleLine != value) {
             this._singleLine = value;
-            if (this._singleLine || this._autoSize == AutoSizeType.Both)
-                this._span.style.whiteSpace = "nowrap";
-            else
-                this._span.style.whiteSpace = "";
+            this._layoutStyleChanged = true;
         }
     }
     get maxWidth() {
@@ -16250,12 +16248,7 @@ class TextField extends UIElement {
     set maxWidth(value) {
         if (this._maxWidth != value) {
             this._maxWidth = value;
-            if (this._maxWidth > 0)
-                this._span.style.maxWidth = this._maxWidth + "px";
-            else if (this._autoSize != AutoSizeType.Both)
-                this._span.style.maxWidth = this._contentRect.width + "px";
-            else if (this._span.style.maxWidth)
-                this._span.style.maxWidth = "";
+            this._layoutStyleChanged = true;
         }
     }
     get textWidth() {
@@ -16268,6 +16261,25 @@ class TextField extends UIElement {
                 this._span.style.maxWidth = this._contentRect.width + "px";
                 this._span.style.width = this._contentRect.width + "px";
             }
+        }
+    }
+    setLayoutStyle() {
+        this._layoutStyleChanged = false;
+        if (this._maxWidth > 0) {
+            this._span.style.maxWidth = this._maxWidth + "px";
+            this._span.style.whiteSpace = "";
+            this._span.style.wordBreak = "break-word";
+        }
+        else if (this._autoSize == AutoSizeType.Both || this._singleLine) {
+            if (this._span.style.maxWidth)
+                this._span.style.maxWidth = "";
+            this._span.style.whiteSpace = "nowrap";
+            this._span.style.wordBreak = "normal";
+        }
+        else {
+            this._span.style.maxWidth = this._contentRect.width + "px";
+            this._span.style.whiteSpace = "";
+            this._span.style.wordBreak = "break-word";
         }
     }
 }
