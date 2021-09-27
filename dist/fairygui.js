@@ -16111,6 +16111,7 @@
             this._span.style.position = "absolute";
             this._span.style.padding = "2px";
             this._span.style.boxSizing = "border-box";
+            this._span.style.whiteSpace = "pre-wrap";
             this.appendChild(this._span);
         }
         get textFormat() {
@@ -16256,18 +16257,18 @@
             this._layoutStyleChanged = false;
             if (this._maxWidth > 0) {
                 this._span.style.maxWidth = this._maxWidth + "px";
-                this._span.style.whiteSpace = "";
+                this._span.style.whiteSpace = "pre-wrap";
                 this._span.style.wordBreak = "break-word";
             }
             else if (this._autoSize == exports.AutoSizeType.Both || this._singleLine) {
                 if (this._span.style.maxWidth)
                     this._span.style.maxWidth = "";
-                this._span.style.whiteSpace = "nowrap";
+                this._span.style.whiteSpace = "pre";
                 this._span.style.wordBreak = "normal";
             }
             else {
                 this._span.style.maxWidth = this._contentRect.width + "px";
-                this._span.style.whiteSpace = "";
+                this._span.style.whiteSpace = "pre-wrap";
                 this._span.style.wordBreak = "break-word";
             }
         }
