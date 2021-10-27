@@ -26,6 +26,7 @@ export class Shape extends UIElement {
     public set color(value: number) {
         if (this._color != value) {
             if (this._type != 0)
+                this._color = value;
                 this.style.backgroundColor = convertToHtmlColor(value);
         }
     }
