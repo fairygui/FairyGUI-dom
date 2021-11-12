@@ -3299,6 +3299,15 @@
         get asCom() {
             return this;
         }
+        static cast(element) {
+            let p = element;
+            while (p) {
+                if (p.$owner)
+                    return p.$owner;
+                p = p.parentElement;
+            }
+            return null;
+        }
         get text() {
             return null;
         }
@@ -13066,7 +13075,7 @@
                         this.clearSelectionExcept(item);
                         item.selected = true;
                     }
-                    else
+                    else if (evt.input.button == 0)
                         this.clearSelectionExcept(item);
                 }
             }
@@ -16100,7 +16109,6 @@
         constructor() {
             super();
             this._maxWidth = 0;
-            this._layoutStyleChanged = true;
             this._textFormat = new TextFormat();
             this._text = "";
             this._textSize = new Vec2();
@@ -16141,7 +16149,7 @@
             return this._text;
         }
         set text(value) {
-            if (!this._layoutStyleChanged && this._text.length < 20 && this._text == value && !this._html)
+            if (this._text.length < 20 && this._text == value && !this._html)
                 return;
             this._text = value;
             this._html = false;
@@ -16159,13 +16167,13 @@
         }
         applyText() {
             this._updatingSize = true;
-            if (this._layoutStyleChanged)
-                this.setLayoutStyle();
+            let tmpChangWrapping;
             if (this._autoSize == exports.AutoSizeType.Both) {
-                if (this.maxWidth > 0)
-                    this._span.style.width = this.maxWidth + "px";
-                else
-                    this._span.style.width = "";
+                this._span.style.width = "";
+                if (this._maxWidth > 0) {
+                    this.updateWrapping();
+                    tmpChangWrapping = true;
+                }
             }
             if (this._html)
                 this._span.innerHTML = this._text;
@@ -16177,6 +16185,10 @@
                 if (!textMeasureHelper.parentElement)
                     document.body.appendChild(textMeasureHelper);
                 textMeasureHelper.appendChild(this._span);
+            }
+            if (tmpChangWrapping && this._span.clientWidth > this._maxWidth) {
+                this._span.style.width = this._maxWidth + "px";
+                this.updateWrapping(true);
             }
             this._textSize.set(this._span.clientWidth, this._span.clientHeight);
             if (this._autoSize == exports.AutoSizeType.Both) {
@@ -16207,7 +16219,7 @@
         set autoSize(value) {
             if (this._autoSize != value) {
                 this._autoSize = value;
-                this._layoutStyleChanged = true;
+                this.updateWrapping();
                 if (this._autoSize == exports.AutoSizeType.Both) {
                     this._span.style.width = "";
                     this._span.style.overflow = "";
@@ -16229,17 +16241,14 @@
         set singleLine(value) {
             if (this._singleLine != value) {
                 this._singleLine = value;
-                this._layoutStyleChanged = true;
+                this.updateWrapping();
             }
         }
         get maxWidth() {
             return this._maxWidth;
         }
         set maxWidth(value) {
-            if (this._maxWidth != value) {
-                this._maxWidth = value;
-                this._layoutStyleChanged = true;
-            }
+            this._maxWidth = value;
         }
         get textWidth() {
             return this._textSize.x;
@@ -16248,26 +16257,16 @@
             super.onSizeChanged();
             if (!this._updatingSize) {
                 if (this._autoSize != exports.AutoSizeType.Both) {
-                    this._span.style.maxWidth = this._contentRect.width + "px";
                     this._span.style.width = this._contentRect.width + "px";
                 }
             }
         }
-        setLayoutStyle() {
-            this._layoutStyleChanged = false;
-            if (this._maxWidth > 0) {
-                this._span.style.maxWidth = this._maxWidth + "px";
-                this._span.style.whiteSpace = "pre-wrap";
-                this._span.style.wordBreak = "break-word";
-            }
-            else if (this._autoSize == exports.AutoSizeType.Both || this._singleLine) {
-                if (this._span.style.maxWidth)
-                    this._span.style.maxWidth = "";
+        updateWrapping(forceWrap) {
+            if ((this._autoSize == exports.AutoSizeType.Both || this._singleLine) && !forceWrap) {
                 this._span.style.whiteSpace = "pre";
                 this._span.style.wordBreak = "normal";
             }
             else {
-                this._span.style.maxWidth = this._contentRect.width + "px";
                 this._span.style.whiteSpace = "pre-wrap";
                 this._span.style.wordBreak = "break-word";
             }
@@ -17702,6 +17701,12 @@
     exports.UIObjectFactory = UIObjectFactory$1;
     exports.UIPackage = UIPackage;
     exports.Vec2 = Vec2;
+    exports.clamp = clamp;
+    exports.clamp01 = clamp01;
+    exports.convertToHtmlColor = convertToHtmlColor;
+    exports.distance = distance;
+    exports.lerp = lerp;
+    exports.repeat = repeat;
 
     Object.defineProperty(exports, '__esModule', { value: true });
 

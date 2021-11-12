@@ -3314,6 +3314,15 @@ class GObject extends EventDispatcher {
     get asCom() {
         return this;
     }
+    static cast(element) {
+        let p = element;
+        while (p) {
+            if (p.$owner)
+                return p.$owner;
+            p = p.parentElement;
+        }
+        return null;
+    }
     get text() {
         return null;
     }
@@ -13081,7 +13090,7 @@ class GList extends GComponent {
                     this.clearSelectionExcept(item);
                     item.selected = true;
                 }
-                else
+                else if (evt.input.button == 0)
                     this.clearSelectionExcept(item);
             }
         }
@@ -16115,7 +16124,6 @@ class TextField extends UIElement {
     constructor() {
         super();
         this._maxWidth = 0;
-        this._layoutStyleChanged = true;
         this._textFormat = new TextFormat();
         this._text = "";
         this._textSize = new Vec2();
@@ -16156,7 +16164,7 @@ class TextField extends UIElement {
         return this._text;
     }
     set text(value) {
-        if (!this._layoutStyleChanged && this._text.length < 20 && this._text == value && !this._html)
+        if (this._text.length < 20 && this._text == value && !this._html)
             return;
         this._text = value;
         this._html = false;
@@ -16174,13 +16182,13 @@ class TextField extends UIElement {
     }
     applyText() {
         this._updatingSize = true;
-        if (this._layoutStyleChanged)
-            this.setLayoutStyle();
+        let tmpChangWrapping;
         if (this._autoSize == AutoSizeType.Both) {
-            if (this.maxWidth > 0)
-                this._span.style.width = this.maxWidth + "px";
-            else
-                this._span.style.width = "";
+            this._span.style.width = "";
+            if (this._maxWidth > 0) {
+                this.updateWrapping();
+                tmpChangWrapping = true;
+            }
         }
         if (this._html)
             this._span.innerHTML = this._text;
@@ -16192,6 +16200,10 @@ class TextField extends UIElement {
             if (!textMeasureHelper.parentElement)
                 document.body.appendChild(textMeasureHelper);
             textMeasureHelper.appendChild(this._span);
+        }
+        if (tmpChangWrapping && this._span.clientWidth > this._maxWidth) {
+            this._span.style.width = this._maxWidth + "px";
+            this.updateWrapping(true);
         }
         this._textSize.set(this._span.clientWidth, this._span.clientHeight);
         if (this._autoSize == AutoSizeType.Both) {
@@ -16222,7 +16234,7 @@ class TextField extends UIElement {
     set autoSize(value) {
         if (this._autoSize != value) {
             this._autoSize = value;
-            this._layoutStyleChanged = true;
+            this.updateWrapping();
             if (this._autoSize == AutoSizeType.Both) {
                 this._span.style.width = "";
                 this._span.style.overflow = "";
@@ -16244,17 +16256,14 @@ class TextField extends UIElement {
     set singleLine(value) {
         if (this._singleLine != value) {
             this._singleLine = value;
-            this._layoutStyleChanged = true;
+            this.updateWrapping();
         }
     }
     get maxWidth() {
         return this._maxWidth;
     }
     set maxWidth(value) {
-        if (this._maxWidth != value) {
-            this._maxWidth = value;
-            this._layoutStyleChanged = true;
-        }
+        this._maxWidth = value;
     }
     get textWidth() {
         return this._textSize.x;
@@ -16263,26 +16272,16 @@ class TextField extends UIElement {
         super.onSizeChanged();
         if (!this._updatingSize) {
             if (this._autoSize != AutoSizeType.Both) {
-                this._span.style.maxWidth = this._contentRect.width + "px";
                 this._span.style.width = this._contentRect.width + "px";
             }
         }
     }
-    setLayoutStyle() {
-        this._layoutStyleChanged = false;
-        if (this._maxWidth > 0) {
-            this._span.style.maxWidth = this._maxWidth + "px";
-            this._span.style.whiteSpace = "pre-wrap";
-            this._span.style.wordBreak = "break-word";
-        }
-        else if (this._autoSize == AutoSizeType.Both || this._singleLine) {
-            if (this._span.style.maxWidth)
-                this._span.style.maxWidth = "";
+    updateWrapping(forceWrap) {
+        if ((this._autoSize == AutoSizeType.Both || this._singleLine) && !forceWrap) {
             this._span.style.whiteSpace = "pre";
             this._span.style.wordBreak = "normal";
         }
         else {
-            this._span.style.maxWidth = this._contentRect.width + "px";
             this._span.style.whiteSpace = "pre-wrap";
             this._span.style.wordBreak = "break-word";
         }
@@ -17652,4 +17651,4 @@ class ColorMatrix {
 }
 let helper = new ColorMatrix();
 
-export { AsyncOperation, AutoSizeType, ButtonMode, ByteBuffer, ChildrenRenderOrder, Color, ColorMatrix, Controller, DragDropManager, EaseType, Event, EventDispatcher, FillMethod, FillOrigin, FillOrigin90, FlipType, GButton, GComboBox, GComponent, GGraph, GGroup, GImage, GLabel, GList, GLoader, GLoader3D, GMovieClip, GObject, GObjectPool, GProgressBar, GRichTextField, GRoot$1 as GRoot, GScrollBar, GSlider, GTextField, GTextInput, GTree, GTreeNode, GTween, GTweener, GWindow, GearAnimation, GearBase, GearColor, GearDisplay, GearDisplay2, GearFontSize, GearIcon, GearLook, GearSize, GearText, GearXY, GroupLayoutType, Image, InputTextField, ListLayoutType, ListSelectionMode, LoaderFillType, Margin, MovieClip, ObjectPropID, ObjectType, OverflowType, PackageItem, PackageItemType, Pool, PopupDirection, PopupMenu, ProgressTitleType, Rect, RelationType, ScrollBarDisplayType, ScrollPane, ScrollType, Stage, TextField, TextFormat, Timers, Transition, TranslationHelper, UBBParser, UIConfig, UIElement, UIObjectFactory$1 as UIObjectFactory, UIPackage, Vec2 };
+export { AsyncOperation, AutoSizeType, ButtonMode, ByteBuffer, ChildrenRenderOrder, Color, ColorMatrix, Controller, DragDropManager, EaseType, Event, EventDispatcher, FillMethod, FillOrigin, FillOrigin90, FlipType, GButton, GComboBox, GComponent, GGraph, GGroup, GImage, GLabel, GList, GLoader, GLoader3D, GMovieClip, GObject, GObjectPool, GProgressBar, GRichTextField, GRoot$1 as GRoot, GScrollBar, GSlider, GTextField, GTextInput, GTree, GTreeNode, GTween, GTweener, GWindow, GearAnimation, GearBase, GearColor, GearDisplay, GearDisplay2, GearFontSize, GearIcon, GearLook, GearSize, GearText, GearXY, GroupLayoutType, Image, InputTextField, ListLayoutType, ListSelectionMode, LoaderFillType, Margin, MovieClip, ObjectPropID, ObjectType, OverflowType, PackageItem, PackageItemType, Pool, PopupDirection, PopupMenu, ProgressTitleType, Rect, RelationType, ScrollBarDisplayType, ScrollPane, ScrollType, Stage, TextField, TextFormat, Timers, Transition, TranslationHelper, UBBParser, UIConfig, UIElement, UIObjectFactory$1 as UIObjectFactory, UIPackage, Vec2, clamp, clamp01, convertToHtmlColor, distance, lerp, repeat };
