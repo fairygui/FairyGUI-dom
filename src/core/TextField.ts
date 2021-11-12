@@ -23,7 +23,6 @@ export class TextField extends UIElement {
     protected _updatingSize: boolean;
     protected _span: HTMLSpanElement;
     protected _textSize: Vec2;
-    protected _layoutStyleChanged: boolean = true;
 
     constructor() {
         super();
@@ -75,7 +74,7 @@ export class TextField extends UIElement {
     }
 
     public set text(value: string) {
-        if (!this._layoutStyleChanged && this._text.length < 20 && this._text == value && !this._html)
+        if (this._text.length < 20 && this._text == value && !this._html)
             return;
 
         this._text = value;
@@ -98,14 +97,15 @@ export class TextField extends UIElement {
 
     private applyText(): void {
         this._updatingSize = true;
-        if (this._layoutStyleChanged)
-            this.setLayoutStyle();
 
+        let tmpChangWrapping: boolean;
         if (this._autoSize == AutoSizeType.Both) {
-            if (this.maxWidth > 0)
-                this._span.style.width = this.maxWidth + "px";
-            else
-                this._span.style.width = "";
+            this._span.style.width = "";
+
+            if (this._maxWidth > 0) {
+                this.updateWrapping();
+                tmpChangWrapping = true;
+            }
         }
 
         if (this._html)
@@ -119,6 +119,11 @@ export class TextField extends UIElement {
             if (!textMeasureHelper.parentElement)
                 document.body.appendChild(textMeasureHelper);
             textMeasureHelper.appendChild(this._span);
+        }
+
+        if (tmpChangWrapping && this._span.clientWidth > this._maxWidth) {
+            this._span.style.width = this._maxWidth + "px";
+            this.updateWrapping(true);
         }
 
         this._textSize.set(this._span.clientWidth, this._span.clientHeight);
@@ -156,7 +161,7 @@ export class TextField extends UIElement {
     public set autoSize(value: AutoSizeType) {
         if (this._autoSize != value) {
             this._autoSize = value;
-            this._layoutStyleChanged = true;
+            this.updateWrapping();
 
             if (this._autoSize == AutoSizeType.Both) {
                 this._span.style.width = "";
@@ -182,7 +187,7 @@ export class TextField extends UIElement {
     public set singleLine(value: boolean) {
         if (this._singleLine != value) {
             this._singleLine = value;
-            this._layoutStyleChanged = true;
+            this.updateWrapping();
         }
     }
 
@@ -191,10 +196,7 @@ export class TextField extends UIElement {
     }
 
     public set maxWidth(value: number) {
-        if (this._maxWidth != value) {
-            this._maxWidth = value;
-            this._layoutStyleChanged = true;
-        }
+        this._maxWidth = value;
     }
 
     public get textWidth(): number {
@@ -206,27 +208,17 @@ export class TextField extends UIElement {
 
         if (!this._updatingSize) {
             if (this._autoSize != AutoSizeType.Both) {
-                this._span.style.maxWidth = this._contentRect.width + "px";
                 this._span.style.width = this._contentRect.width + "px";
             }
         }
     }
 
-    private setLayoutStyle() {
-        this._layoutStyleChanged = false;
-        if (this._maxWidth > 0) {
-            this._span.style.maxWidth = this._maxWidth + "px";
-            this._span.style.whiteSpace = "pre-wrap";
-            this._span.style.wordBreak = "break-word";
-        }
-        else if (this._autoSize == AutoSizeType.Both || this._singleLine) {
-            if (this._span.style.maxWidth)
-                this._span.style.maxWidth = "";
+    private updateWrapping(forceWrap?: boolean) {
+        if ((this._autoSize == AutoSizeType.Both || this._singleLine) && !forceWrap) {
             this._span.style.whiteSpace = "pre";
             this._span.style.wordBreak = "normal";
         }
         else {
-            this._span.style.maxWidth = this._contentRect.width + "px";
             this._span.style.whiteSpace = "pre-wrap";
             this._span.style.wordBreak = "break-word";
         }
