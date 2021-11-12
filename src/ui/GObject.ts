@@ -657,6 +657,18 @@ export class GObject extends EventDispatcher {
         return <GComponent><any>this;
     }
 
+    public static cast(element: HTMLElement): GObject {
+        let p: UIElement = <UIElement>element;
+        while (p) {
+            if (p.$owner)
+                return p.$owner;
+
+            p = <UIElement>p.parentElement;
+        }
+
+        return null;
+    }
+
     public get text(): string {
         return null;
     }
