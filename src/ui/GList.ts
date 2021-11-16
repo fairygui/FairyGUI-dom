@@ -802,7 +802,7 @@ export class GList extends GComponent {
                     this.clearSelectionExcept(item);
                     item.selected = true;
                 }
-                else
+                else if (evt.input.button == 0)
                     this.clearSelectionExcept(item);
             }
         }

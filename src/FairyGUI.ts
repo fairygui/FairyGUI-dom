@@ -63,7 +63,7 @@ export { EaseType } from "./tween/EaseType";
 
 export { UBBParser } from "./utils/UBBParser";
 export { ByteBuffer } from "./utils/ByteBuffer";;
-export { Constructor } from "./utils/ToolSet"
+export * from "./utils/ToolSet"
 export { Pool } from "./utils/Pool";
 export { ColorMatrix } from "./utils/ColorMatrix";
 export { Timers } from "./utils/Timers";
