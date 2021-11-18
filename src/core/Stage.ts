@@ -120,6 +120,7 @@ export class Stage extends UIElement implements IStage {
             .fgui-stage textarea::-webkit-scrollbar {
                 display: none;
             }
+            *{touch-action:none}
         </style>`
         );
         this.className = "fgui-stage";
