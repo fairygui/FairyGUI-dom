@@ -225,6 +225,7 @@ export class GSlider extends GComponent {
         this.canDrag = true;
         evt.stopPropagation();
         evt.capturePointer();
+        evt.sender.element.setPointerCapture(evt.input.pointerId);
 
         this.globalToLocal(evt.input.x, evt.input.y, this._clickPos);
         this._clickPercent = clamp01((this._value - this._min) / (this._max - this._min));

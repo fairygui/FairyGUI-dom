@@ -95,6 +95,7 @@ export class ScrollPane {
         this._owner = owner;
 
         this._maskContainer = createUIElement("fgui-div");
+        this._maskContainer.opaque = false;
         this._owner.element.addChild(this._maskContainer);
 
         this._container = this._owner._container;

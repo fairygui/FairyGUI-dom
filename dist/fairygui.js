@@ -5348,6 +5348,7 @@
         constructor(owner) {
             this._owner = owner;
             this._maskContainer = createUIElement("fgui-div");
+            this._maskContainer.opaque = false;
             this._owner.element.addChild(this._maskContainer);
             this._container = this._owner._container;
             this._container.setPosition(0, 0);
@@ -12029,6 +12030,7 @@
             this.canDrag = true;
             evt.stopPropagation();
             evt.capturePointer();
+            evt.sender.element.setPointerCapture(evt.input.pointerId);
             this.globalToLocal(evt.input.x, evt.input.y, this._clickPos);
             this._clickPercent = clamp01((this._value - this._min) / (this._max - this._min));
         }
@@ -12301,6 +12303,8 @@
             if (this._bar == null)
                 return;
             evt.stopPropagation();
+            evt.capturePointer();
+            evt.sender.element.setPointerCapture(evt.input.pointerId);
             this._gripDragging = true;
             this._target.updateScrollBarVisible();
             this.globalToLocal(evt.input.x, evt.input.y, this._dragOffset);
@@ -16401,8 +16405,10 @@
         }
         set color(value) {
             if (this._color != value) {
-                if (this._type != 0)
+                if (this._type != 0) {
+                    this._color = value;
                     this.style.backgroundColor = convertToHtmlColor(value);
+                }
             }
         }
         drawRect(lineWidth, lineColor, fillColor) {
@@ -16940,6 +16946,7 @@
             .fgui-stage textarea::-webkit-scrollbar {
                 display: none;
             }
+            *{touch-action:none}
         </style>`);
             this.className = "fgui-stage";
             ownerWindow.addEventListener('keydown', this.onKeydown.bind(this));
