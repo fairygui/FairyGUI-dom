@@ -119,6 +119,10 @@ export class GTreeNode {
             cc.selectedIndex = this.expanded ? 1 : 0;
         }
 
+        let btn = this._cell.getChild("expandButton");
+        if (btn)
+            btn.on("click", (evt: Event) => evt.stopPropagation());
+
         this._leafController = this._cell.getController("leaf");
         if (this._leafController)
             this._leafController.selectedIndex = this.isFolder ? 0 : 1;

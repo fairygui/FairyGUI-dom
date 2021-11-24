@@ -12045,7 +12045,6 @@ class GSlider extends GComponent {
         this.canDrag = true;
         evt.stopPropagation();
         evt.capturePointer();
-        evt.sender.element.setPointerCapture(evt.input.pointerId);
         this.globalToLocal(evt.input.x, evt.input.y, this._clickPos);
         this._clickPercent = clamp01((this._value - this._min) / (this._max - this._min));
     }
@@ -12319,7 +12318,6 @@ class GScrollBar extends GComponent {
             return;
         evt.stopPropagation();
         evt.capturePointer();
-        evt.sender.element.setPointerCapture(evt.input.pointerId);
         this._gripDragging = true;
         this._target.updateScrollBarVisible();
         this.globalToLocal(evt.input.x, evt.input.y, this._dragOffset);
@@ -14649,6 +14647,9 @@ class GTreeNode {
             cc.on("status_changed", this.__expandedStateChanged, this);
             cc.selectedIndex = this.expanded ? 1 : 0;
         }
+        let btn = this._cell.getChild("expandButton");
+        if (btn)
+            btn.on("click", (evt) => evt.stopPropagation());
         this._leafController = this._cell.getController("leaf");
         if (this._leafController)
             this._leafController.selectedIndex = this.isFolder ? 0 : 1;
@@ -16906,6 +16907,7 @@ class Stage extends UIElement {
         doc.addEventListener('pointerup', ev => this.handlePointer(ev, 1), { passive: false });
         doc.addEventListener('pointermove', ev => this.handlePointer(ev, 2), { passive: false });
         doc.addEventListener('pointercancel', ev => this.handlePointer(ev, 3), { passive: false });
+        doc.addEventListener('pointerleave', ev => this.handlePointer(ev, 3), { passive: false });
         doc.addEventListener('contextmenu', ev => this.handleContextMenu(ev));
         doc.addEventListener('dragend', ev => this.handlePointer(ev, 1), { passive: false });
         doc.addEventListener('dragover', ev => this.handlePointer(ev, 2), { passive: false });
@@ -17227,7 +17229,9 @@ class Stage extends UIElement {
     }
     handleWheel(ev) {
         this._pointerPos.set(ev.pageX, ev.pageY);
-        let pointer = this._pointers[0];
+        let pointer = this.getPointer(-1);
+        if (!pointer)
+            pointer = this._pointers[0];
         this._touchTarget = null;
         let ele = ev.target;
         while (ele) {

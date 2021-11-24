@@ -104,7 +104,6 @@ export class GScrollBar extends GComponent {
 
         evt.stopPropagation();
         evt.capturePointer();
-        evt.sender.element.setPointerCapture(evt.input.pointerId);
 
         this._gripDragging = true;
         this._target.updateScrollBarVisible();

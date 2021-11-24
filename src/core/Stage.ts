@@ -62,6 +62,7 @@ export class Stage extends UIElement implements IStage {
         doc.addEventListener('pointerup', ev => this.handlePointer(ev, 1), { passive: false });
         doc.addEventListener('pointermove', ev => this.handlePointer(ev, 2), { passive: false });
         doc.addEventListener('pointercancel', ev => this.handlePointer(ev, 3), { passive: false });
+        doc.addEventListener('pointerleave', ev => this.handlePointer(ev, 3), { passive: false });
         doc.addEventListener('contextmenu', ev => this.handleContextMenu(ev));
 
         doc.addEventListener('dragend', ev => this.handlePointer(ev, 1), { passive: false });
@@ -438,7 +439,9 @@ export class Stage extends UIElement implements IStage {
     private handleWheel(ev: WheelEvent): void {
         this._pointerPos.set(ev.pageX, ev.pageY);
 
-        let pointer = this._pointers[0];
+        let pointer = this.getPointer(-1);
+        if (!pointer)
+            pointer = this._pointers[0];
         this._touchTarget = null;
         let ele: any = ev.target;
         while (ele) {
