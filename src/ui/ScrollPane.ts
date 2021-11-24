@@ -41,7 +41,7 @@ export class ScrollPane {
     private _decelerationRate: number;
     private _scrollBarMargin: Margin;
     private _bouncebackEffect: boolean;
-    private _touchEffect: boolean;
+    private _touchEffectButton: number;
     private _scrollBarDisplayAuto?: boolean;
     private _vScrollNone: boolean;
     private _hScrollNone: boolean;
@@ -155,11 +155,11 @@ export class ScrollPane {
         if ((flags & 4) != 0) this._displayInDemand = true;
         if ((flags & 8) != 0) this._pageMode = true;
         if (flags & 16)
-            this._touchEffect = true;
+            this._touchEffectButton = 0;
         else if (flags & 32)
-            this._touchEffect = false;
+            this._touchEffectButton = null;
         else
-            this._touchEffect = UIConfig.defaultScrollTouchEffect;
+            this._touchEffectButton = UIConfig.defaultScrollTouchEffect ? 0 : null;
         if (flags & 64)
             this._bouncebackEffect = true;
         else if (flags & 128)
@@ -272,11 +272,19 @@ export class ScrollPane {
     }
 
     public get touchEffect(): boolean {
-        return this._touchEffect;
+        return this._touchEffectButton != null;
     }
 
     public set touchEffect(sc: boolean) {
-        this._touchEffect = sc;
+        this._touchEffectButton = sc ? 0 : null;
+    }
+
+    public get touchEffectButton(): number {
+        return this._touchEffectButton;
+    }
+
+    public set touchEffectButton(value: number) {
+        this._touchEffectButton = value;
     }
 
     public set scrollStep(val: number) {
@@ -972,10 +980,7 @@ export class ScrollPane {
     }
 
     private __touchBegin(evt: Event): void {
-        if (!this._touchEffect)
-            return;
-
-        if (evt.input.button != 0)
+        if (this._touchEffectButton != evt.input.button)
             return;
 
         evt.capturePointer();
@@ -1001,7 +1006,7 @@ export class ScrollPane {
     }
 
     private __touchMove(evt: Event): void {
-        if (!this._touchEffect || this.owner.isDisposed)
+        if (this._touchEffectButton == null || this.owner.isDisposed)
             return;
 
         if (ScrollPane.draggingPane && ScrollPane.draggingPane != this || GObject.draggingObject) //已经有其他拖动
@@ -1179,7 +1184,7 @@ export class ScrollPane {
 
         s_gestureFlag = 0;
 
-        if (!this._dragged || !this._touchEffect) {
+        if (!this._dragged || this._touchEffectButton == null) {
             this._dragged = false;
             return;
         }
