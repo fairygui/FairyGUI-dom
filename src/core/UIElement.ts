@@ -387,8 +387,8 @@ export class UIElement extends HTMLDivElement {
 
         if (!result)
             result = new Vec2();
-        result.x = x - rect.x / sx;
-        result.y = y - rect.y / sy;
+        result.x = (x - rect.x) / sx;
+        result.y = (y - rect.y) / sy;
 
         return result;
     }
