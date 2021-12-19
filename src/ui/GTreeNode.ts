@@ -98,36 +98,46 @@ export class GTreeNode {
     }
 
     public set cell(value: GComponent) {
-        if (this._cell)
+        if (this._cell) {
             this._cell._treeNode = null;
+
+            let cc = this._cell.getController("expanded");
+            if (cc)
+                cc.off("status_changed", this.__expandedStateChanged, this);
+
+            let btn = this._cell.getChild("expandButton");
+            if (btn)
+                btn.off("click", this.__clickExpandButton, this);
+
+            this._cell.off("pointer_down", this.__cellMouseDown, this);
+        }
 
         this._cell = value;
         this._cellFromPool = false;
-        if (!this._cell)
-            return;
 
-        this._cell._treeNode = this;
+        if (this._cell) {
+            this._cell._treeNode = this;
 
-        this._indentObj = this._cell.getChild("indent");
-        if (this._tree && this._indentObj)
-            this._indentObj.width = (this._level - 1) * this._tree.indent;
+            this._indentObj = this._cell.getChild("indent");
+            if (this._tree && this._indentObj)
+                this._indentObj.width = (this._level - 1) * this._tree.indent;
 
-        var cc: Controller;
-        cc = this._cell.getController("expanded");
-        if (cc) {
-            cc.on("status_changed", this.__expandedStateChanged, this);
-            cc.selectedIndex = this.expanded ? 1 : 0;
+            let cc = this._cell.getController("expanded");
+            if (cc) {
+                cc.on("status_changed", this.__expandedStateChanged, this);
+                cc.selectedIndex = this.expanded ? 1 : 0;
+            }
+
+            let btn = this._cell.getChild("expandButton");
+            if (btn)
+                btn.on("click", this.__clickExpandButton, this);
+
+            this._leafController = this._cell.getController("leaf");
+            if (this._leafController)
+                this._leafController.selectedIndex = this.isFolder ? 0 : 1;
+
+            this._cell.on("pointer_down", this.__cellMouseDown, this);
         }
-
-        let btn = this._cell.getChild("expandButton");
-        if (btn)
-            btn.on("click", (evt: Event) => evt.stopPropagation());
-
-        this._leafController = this._cell.getController("leaf");
-        if (this._leafController)
-            this._leafController.selectedIndex = this.isFolder ? 0 : 1;
-
-        this._cell.on("pointer_down", this.__cellMouseDown, this);
     }
 
     public createCell() {
@@ -340,5 +350,10 @@ export class GTreeNode {
     private __cellMouseDown(evt: Event): void {
         if (this._tree && this.isFolder)
             this._tree._expandedStatusInEvt = this._expanded;
+    }
+
+    private __clickExpandButton(evt: Event): void {
+        //dont set selection if click on the expand button
+        evt.stopPropagation();
     }
 }
