@@ -122,6 +122,13 @@ export class Stage extends UIElement implements IStage {
                 display: none;
             }
             *{touch-action:none}
+
+            .selectable {
+                -moz-user-select: text;
+                -khtml-user-select: text;
+                -webkit-user-select: text; 
+                -ms-user-select: text;
+            }
         </style>`
         );
         this.className = "fgui-stage";

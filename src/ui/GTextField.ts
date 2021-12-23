@@ -145,6 +145,14 @@ export class GTextField extends GObject {
         return this._element.textWidth;
     }
 
+    public get selectable(): boolean {
+        return this._element.selectable;
+    }
+
+    public set selectable(value: boolean) {
+        this._element.selectable = value;
+    }
+
     public getProp(index: number): any {
         switch (index) {
             case ObjectPropID.Color:

@@ -23,6 +23,7 @@ export class TextField extends UIElement {
     protected _updatingSize: boolean;
     protected _span: HTMLSpanElement;
     protected _textSize: Vec2;
+    protected _selectable: boolean;
 
     constructor() {
         super();
@@ -197,6 +198,21 @@ export class TextField extends UIElement {
 
     public set maxWidth(value: number) {
         this._maxWidth = value;
+    }
+
+    public get selectable(): boolean {
+        return this._selectable;
+    }
+
+    public set selectable(value: boolean) {
+        if (this._selectable != value) {
+            this._selectable = value;
+
+            if (value)
+                this._span.classList.add("selectable");
+            else
+                this._span.classList.remove("selectable");
+        }
     }
 
     public get textWidth(): number {

@@ -10160,6 +10160,12 @@
         get textWidth() {
             return this._element.textWidth;
         }
+        get selectable() {
+            return this._element.selectable;
+        }
+        set selectable(value) {
+            this._element.selectable = value;
+        }
         getProp(index) {
             switch (index) {
                 case exports.ObjectPropID.Color:
@@ -16270,6 +16276,18 @@
         set maxWidth(value) {
             this._maxWidth = value;
         }
+        get selectable() {
+            return this._selectable;
+        }
+        set selectable(value) {
+            if (this._selectable != value) {
+                this._selectable = value;
+                if (value)
+                    this._span.classList.add("selectable");
+                else
+                    this._span.classList.remove("selectable");
+            }
+        }
         get textWidth() {
             return this._textSize.x;
         }
@@ -16964,6 +16982,13 @@
                 display: none;
             }
             *{touch-action:none}
+
+            .selectable {
+                -moz-user-select: text;
+                -khtml-user-select: text;
+                -webkit-user-select: text; 
+                -ms-user-select: text;
+            }
         </style>`);
             this.className = "fgui-stage";
             ownerWindow.addEventListener('keydown', this.onKeydown.bind(this));
