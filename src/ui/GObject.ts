@@ -159,9 +159,6 @@ export class GObject extends EventDispatcher {
                     this._group.setBoundsChangedFlag(true);
                 this.emit("pos_changed");
             }
-
-            if (GObject.draggingObject == this && !s_dragging)
-                this.localToGlobalRect(0, 0, this.width, this.height, sGlobalRect);
         }
     }
 
@@ -1125,10 +1122,7 @@ export class GObject extends EventDispatcher {
             }
 
             let pt = this.parent.globalToLocal(xx, yy, s_vec2);
-
-            s_dragging = true;
             this.setPosition(Math.round(pt.x), Math.round(pt.y));
-            s_dragging = false;
 
             this.emit("drag_move");
         }
@@ -1158,7 +1152,6 @@ var s_rect: Rect = new Rect();
 
 var sGlobalDragStart: Vec2 = new Vec2();
 var sGlobalRect: Rect = new Rect();
-var s_dragging: boolean;
 
 export var gInstanceCounter: number = 0;
 export var constructingDepth: { n: number } = { n: 0 };
