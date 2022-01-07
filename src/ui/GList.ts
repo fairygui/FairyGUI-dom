@@ -1,4 +1,5 @@
 import { Event } from "../event/Event";
+import { InputTextField } from "../FairyGUI";
 import { Rect } from "../math/Rect";
 import { Vec2 } from "../math/Vec2";
 import { ByteBuffer } from "../utils/ByteBuffer";
@@ -562,6 +563,9 @@ export class GList extends GComponent {
     }
 
     private __keydown(evt: Event) {
+        if (evt.initiator instanceof InputTextField)
+            return;
+
         let index = -1;
         switch (evt.input.keyCode) {
             case "ArrowLeft":

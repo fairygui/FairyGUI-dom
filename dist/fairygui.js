@@ -2896,8 +2896,6 @@
                         this._group.setBoundsChangedFlag(true);
                     this.emit("pos_changed");
                 }
-                if (GObject.draggingObject == this && !s_dragging)
-                    this.localToGlobalRect(0, 0, this.width, this.height, sGlobalRect);
             }
         }
         get xMin() {
@@ -3668,9 +3666,7 @@
                     }
                 }
                 let pt = this.parent.globalToLocal(xx, yy, s_vec2$1);
-                s_dragging = true;
                 this.setPosition(Math.round(pt.x), Math.round(pt.y));
-                s_dragging = false;
                 this.emit("drag_move");
             }
         }
@@ -3694,7 +3690,6 @@
     var s_rect = new Rect();
     var sGlobalDragStart = new Vec2();
     var sGlobalRect = new Rect();
-    var s_dragging;
     var gInstanceCounter = 0;
     var constructingDepth = { n: 0 };
 
@@ -5432,7 +5427,7 @@
                     if (res) {
                         this._vtScrollBar = (UIPackage.createObjectFromURL(res));
                         if (!this._vtScrollBar)
-                            throw "cannot create scrollbar} from " + res;
+                            throw "cannot create scrollbar from " + res;
                         this._vtScrollBar.setScrollPane(this, true);
                         this._owner.element.addChild(this._vtScrollBar.element);
                     }
@@ -5442,7 +5437,7 @@
                     if (res) {
                         this._hzScrollBar = (UIPackage.createObjectFromURL(res));
                         if (!this._hzScrollBar)
-                            throw "cannot create scrollbar} from " + res;
+                            throw "cannot create scrollbar from " + res;
                         this._hzScrollBar.setScrollPane(this, false);
                         this._owner.element.addChild(this._hzScrollBar.element);
                     }
@@ -9802,7 +9797,7 @@
             if (!end) {
                 if (attr == null)
                     attr = this.getTagText();
-                return "<a class='" + this.linkClass + "' href=\"#\" onclick=\"stage.onClickLink(event, '" + attr + "');\">";
+                return "<a class='" + this.linkClass + "' href=\"#\" onclick=\"fguiStage.onClickLink(event, '" + attr + "');\">";
             }
             else
                 return "</a>";
@@ -12867,6 +12862,8 @@
             }
         }
         __keydown(evt) {
+            if (evt.initiator instanceof InputTextField)
+                return;
             let index = -1;
             switch (evt.input.keyCode) {
                 case "ArrowLeft":
@@ -16323,6 +16320,12 @@
         init() {
             super.init();
             this.createElement();
+            this.addEventListener("dragstart", (evt) => {
+                if (isAnyEditing) {
+                    evt.stopPropagation();
+                    evt.preventDefault();
+                }
+            });
             this.$owner.on("focus_in", () => {
                 this._input.focus();
             });

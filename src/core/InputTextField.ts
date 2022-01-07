@@ -31,6 +31,13 @@ export class InputTextField extends UIElement {
         super.init();
         this.createElement();
 
+        this.addEventListener("dragstart", (evt: DragEvent) => {
+            if (isAnyEditing) {
+                evt.stopPropagation();
+                evt.preventDefault();
+            }
+        });
+
         this.$owner.on("focus_in", () => {
             this._input.focus();
         });
