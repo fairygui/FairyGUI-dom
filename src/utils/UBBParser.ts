@@ -34,7 +34,7 @@ export class UBBParser {
             if (attr == null)
                 attr = this.getTagText();
 
-            return "<a class='" + this.linkClass + "' href=\"#\" onclick=\"stage.onClickLink(event, '" + attr + "');\">";
+            return "<a class='" + this.linkClass + "' href=\"#\" onclick=\"fguiStage.onClickLink(event, '" + attr + "');\">";
         }
         else
             return "</a>";

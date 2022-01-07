@@ -181,7 +181,7 @@ export class ScrollPane {
                 if (res) {
                     this._vtScrollBar = <GScrollBar>(UIPackage.createObjectFromURL(res));
                     if (!this._vtScrollBar)
-                        throw "cannot create scrollbar} from " + res;
+                        throw "cannot create scrollbar from " + res;
                     this._vtScrollBar.setScrollPane(this, true);
                     this._owner.element.addChild(this._vtScrollBar.element);
                 }
@@ -191,7 +191,7 @@ export class ScrollPane {
                 if (res) {
                     this._hzScrollBar = <GScrollBar>(UIPackage.createObjectFromURL(res));
                     if (!this._hzScrollBar)
-                        throw "cannot create scrollbar} from " + res;
+                        throw "cannot create scrollbar from " + res;
                     this._hzScrollBar.setScrollPane(this, false);
                     this._owner.element.addChild(this._hzScrollBar.element);
                 }
