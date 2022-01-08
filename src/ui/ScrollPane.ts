@@ -1285,7 +1285,7 @@ export class ScrollPane {
         if (!this._mouseWheelEnabled)
             return;
 
-        var delta: number = evt.input.mouseWheelDelta;
+        var delta: number = evt.input.mouseWheelDelta / 40;
         if (this._snapToItem && Math.abs(delta) < 1)
             delta = Math.sign(delta);
 

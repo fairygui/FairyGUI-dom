@@ -468,7 +468,7 @@ export class Stage extends UIElement implements IStage {
         pointer.altKey = ev.altKey;
         pointer.ctrlKey = ev.ctrlKey;
         pointer.commandKey = ev.metaKey;
-        pointer.mouseWheelDelta = ev.deltaY / 20;
+        pointer.mouseWheelDelta = ev.deltaY;
         this.setLastPointer(pointer);
         this._touchTarget.bubbleEvent(<HTMLElement>ev.target, "mouse_wheel");
         pointer.mouseWheelDelta = 0;

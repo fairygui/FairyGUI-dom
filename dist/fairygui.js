@@ -6347,7 +6347,7 @@
         __mouseWheel(evt) {
             if (!this._mouseWheelEnabled)
                 return;
-            var delta = evt.input.mouseWheelDelta;
+            var delta = evt.input.mouseWheelDelta / 40;
             if (this._snapToItem && Math.abs(delta) < 1)
                 delta = Math.sign(delta);
             if (this._overlapSize.x > 0 && this._overlapSize.y == 0) {
@@ -17276,7 +17276,7 @@
             pointer.altKey = ev.altKey;
             pointer.ctrlKey = ev.ctrlKey;
             pointer.commandKey = ev.metaKey;
-            pointer.mouseWheelDelta = ev.deltaY / 20;
+            pointer.mouseWheelDelta = ev.deltaY;
             this.setLastPointer(pointer);
             this._touchTarget.bubbleEvent(ev.target, "mouse_wheel");
             pointer.mouseWheelDelta = 0;
