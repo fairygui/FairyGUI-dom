@@ -19,11 +19,11 @@ export class GComponent extends GObject {
     private _applyingController?: Controller;
 
     protected _margin: Margin;
-    protected _trackBounds: boolean;
     protected _boundsChanged: boolean;
     protected _childrenRenderOrder: number;
     protected _apexIndex: number;
 
+    public _trackBounds: boolean;
     public _buildingDisplayList: boolean;
     public _children: GObject[];
     public _controllers: Controller[];
@@ -673,6 +673,7 @@ export class GComponent extends GObject {
         }
         this._scrollPane = new ScrollPane(this);
         this._scrollPane.setup(buffer);
+        this._trackBounds = true;
     }
 
     protected setupOverflow(overflow: number): void {
@@ -722,7 +723,7 @@ export class GComponent extends GObject {
     }
 
     public setBoundsChangedFlag(): void {
-        if (!this._scrollPane && !this._trackBounds)
+        if (!this._trackBounds)
             return;
 
         if (!this._boundsChanged) {

@@ -131,6 +131,9 @@ export class ScrollPane {
         this._owner.on("pointer_move", this.__touchMove, this);
         this._owner.on("pointer_up", this.__touchEnd, this);
         this._owner.on("mouse_wheel", this.__mouseWheel, this);
+
+        //disable the low level scroll
+        this._owner.element.addEventListener("scroll", () => this._owner.element.scrollTo(0, 0));
     }
 
     public setup(buffer: ByteBuffer): void {
@@ -560,7 +563,9 @@ export class ScrollPane {
 
         if (this._overlapSize.y > 0) {
             var bottom: number = this._yPos + this._viewSize.y;
-            if (setFirst || rect.y <= this._yPos || rect.height >= this._viewSize.y) {
+            if (setFirst || rect.y <= this._yPos) {
+                if (rect.y + rect.height >= bottom) //if an item size is large than viewSize, dont scroll
+                    return;
                 if (this._pageMode)
                     this.setPosY(Math.floor(rect.y / this._pageSize.y) * this._pageSize.y, ani);
                 else
@@ -572,12 +577,15 @@ export class ScrollPane {
                 else if (rect.height <= this._viewSize.y / 2)
                     this.setPosY(rect.y + rect.height * 2 - this._viewSize.y, ani);
                 else
-                    this.setPosY(rect.y + rect.height - this._viewSize.y, ani);
+                    this.setPosY(rect.y + Math.min(rect.height - this._viewSize.y, 0), ani);
             }
         }
         if (this._overlapSize.x > 0) {
             var right: number = this._xPos + this._viewSize.x;
-            if (setFirst || rect.x <= this._xPos || rect.width >= this._viewSize.x) {
+            if (setFirst || rect.x <= this._xPos) {
+                if (rect.x + rect.width >= right) //if an item size is large than viewSize, dont scroll
+                    return;
+
                 if (this._pageMode)
                     this.setPosX(Math.floor(rect.x / this._pageSize.x) * this._pageSize.x, ani);
                 else
@@ -589,7 +597,7 @@ export class ScrollPane {
                 else if (rect.width <= this._viewSize.x / 2)
                     this.setPosX(rect.x + rect.width * 2 - this._viewSize.x, ani);
                 else
-                    this.setPosX(rect.x + rect.width - this._viewSize.x, ani);
+                    this.setPosX(rect.x + Math.min(rect.width - this._viewSize.x, 0), ani);
             }
         }
 
@@ -821,6 +829,18 @@ export class ScrollPane {
         if (this._displayInDemand) {
             this._vScrollNone = this._contentSize.y <= this._viewSize.y;
             this._hScrollNone = this._contentSize.x <= this._viewSize.x;
+
+            if (this._vtScrollBar && this._hzScrollBar) {
+                if (!this._hScrollNone)
+                    this._vtScrollBar.height = this._owner.height - this._hzScrollBar.height - this._scrollBarMargin.top - this._scrollBarMargin.bottom;
+                else
+                    this._vtScrollBar.height = this._owner.height - this._scrollBarMargin.top - this._scrollBarMargin.bottom;
+
+                if (!this._vScrollNone)
+                    this._hzScrollBar.width = this._owner.width - this._vtScrollBar.width - this._scrollBarMargin.left - this._scrollBarMargin.right;
+                else
+                    this._hzScrollBar.width = this._owner.width - this._scrollBarMargin.left - this._scrollBarMargin.right;
+            }
         }
 
         if (this._vtScrollBar) {

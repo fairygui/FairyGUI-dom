@@ -2074,8 +2074,6 @@ export class GList extends GComponent {
                         continue;
 
                     child.setSize(viewWidth, child.height, true);
-                    if (child.width > maxWidth)
-                        maxWidth = child.width;
                 }
             }
 
@@ -2106,8 +2104,6 @@ export class GList extends GComponent {
                         continue;
 
                     child.setSize(child.width, viewHeight, true);
-                    if (child.height > maxHeight)
-                        maxHeight = child.height;
                 }
             }
 
