@@ -5391,6 +5391,9 @@ class ScrollPane {
         this._owner.on("pointer_move", this.__touchMove, this);
         this._owner.on("pointer_up", this.__touchEnd, this);
         this._owner.on("mouse_wheel", this.__mouseWheel, this);
+        //disable the low level scroll
+        this._owner.element.addEventListener("scroll", () => this._owner.element.scrollTo(0, 0));
+        this._maskContainer.addEventListener("scroll", () => this._maskContainer.scrollTo(0, 0));
     }
     setup(buffer) {
         this._scrollType = buffer.readByte();
@@ -5740,7 +5743,9 @@ class ScrollPane {
             rect = target;
         if (this._overlapSize.y > 0) {
             var bottom = this._yPos + this._viewSize.y;
-            if (setFirst || rect.y <= this._yPos || rect.height >= this._viewSize.y) {
+            if (setFirst || rect.y <= this._yPos) {
+                if (rect.y + rect.height >= bottom) //if an item size is large than viewSize, dont scroll
+                    return;
                 if (this._pageMode)
                     this.setPosY(Math.floor(rect.y / this._pageSize.y) * this._pageSize.y, ani);
                 else
@@ -5752,12 +5757,14 @@ class ScrollPane {
                 else if (rect.height <= this._viewSize.y / 2)
                     this.setPosY(rect.y + rect.height * 2 - this._viewSize.y, ani);
                 else
-                    this.setPosY(rect.y + rect.height - this._viewSize.y, ani);
+                    this.setPosY(rect.y + Math.min(rect.height - this._viewSize.y, 0), ani);
             }
         }
         if (this._overlapSize.x > 0) {
             var right = this._xPos + this._viewSize.x;
-            if (setFirst || rect.x <= this._xPos || rect.width >= this._viewSize.x) {
+            if (setFirst || rect.x <= this._xPos) {
+                if (rect.x + rect.width >= right) //if an item size is large than viewSize, dont scroll
+                    return;
                 if (this._pageMode)
                     this.setPosX(Math.floor(rect.x / this._pageSize.x) * this._pageSize.x, ani);
                 else
@@ -5769,7 +5776,7 @@ class ScrollPane {
                 else if (rect.width <= this._viewSize.x / 2)
                     this.setPosX(rect.x + rect.width * 2 - this._viewSize.x, ani);
                 else
-                    this.setPosX(rect.x + rect.width - this._viewSize.x, ani);
+                    this.setPosX(rect.x + Math.min(rect.width - this._viewSize.x, 0), ani);
             }
         }
         if (!ani && this._needRefresh)
@@ -5968,6 +5975,16 @@ class ScrollPane {
         if (this._displayInDemand) {
             this._vScrollNone = this._contentSize.y <= this._viewSize.y;
             this._hScrollNone = this._contentSize.x <= this._viewSize.x;
+            if (this._vtScrollBar && this._hzScrollBar) {
+                if (!this._hScrollNone)
+                    this._vtScrollBar.height = this._owner.height - this._hzScrollBar.height - this._scrollBarMargin.top - this._scrollBarMargin.bottom;
+                else
+                    this._vtScrollBar.height = this._owner.height - this._scrollBarMargin.top - this._scrollBarMargin.bottom;
+                if (!this._vScrollNone)
+                    this._hzScrollBar.width = this._owner.width - this._vtScrollBar.width - this._scrollBarMargin.left - this._scrollBarMargin.right;
+                else
+                    this._hzScrollBar.width = this._owner.width - this._scrollBarMargin.left - this._scrollBarMargin.right;
+            }
         }
         if (this._vtScrollBar) {
             if (this._contentSize.y == 0)
@@ -8826,6 +8843,7 @@ class GComponent extends GObject {
         }
         this._scrollPane = new ScrollPane(this);
         this._scrollPane.setup(buffer);
+        this._trackBounds = true;
     }
     setupOverflow(overflow) {
         if (overflow == OverflowType.Hidden) {
@@ -8867,7 +8885,7 @@ class GComponent extends GObject {
             this._scrollPane.handleControllerChanged(c);
     }
     setBoundsChangedFlag() {
-        if (!this._scrollPane && !this._trackBounds)
+        if (!this._trackBounds)
             return;
         if (!this._boundsChanged) {
             this._boundsChanged = true;
@@ -14208,8 +14226,6 @@ class GList extends GComponent {
                     if (this.foldInvisibleItems && !child.visible)
                         continue;
                     child.setSize(viewWidth, child.height, true);
-                    if (child.width > maxWidth)
-                        maxWidth = child.width;
                 }
             }
             cw = Math.ceil(maxWidth);
@@ -14236,8 +14252,6 @@ class GList extends GComponent {
                     if (this.foldInvisibleItems && !child.visible)
                         continue;
                     child.setSize(child.width, viewHeight, true);
-                    if (child.height > maxHeight)
-                        maxHeight = child.height;
                 }
             }
             ch = Math.ceil(maxHeight);

@@ -134,6 +134,7 @@ export class ScrollPane {
 
         //disable the low level scroll
         this._owner.element.addEventListener("scroll", () => this._owner.element.scrollTo(0, 0));
+        this._maskContainer.addEventListener("scroll", () => this._maskContainer.scrollTo(0, 0));
     }
 
     public setup(buffer: ByteBuffer): void {
