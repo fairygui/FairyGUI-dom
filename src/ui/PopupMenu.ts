@@ -198,8 +198,8 @@ export class PopupMenu {
             let cnt = this._list.numChildren;
             let maxDelta = -1000;
             for (let i = 0; i < cnt; i++) {
-                let obj = this._list.getChildAt(i) as GButton;
-                if (obj == null)
+                let obj = this._list.getChildAt(i);
+                if (!(obj instanceof GButton))
                     continue;
                 let tf = obj.getTextField();
                 if (tf instanceof GTextField) {

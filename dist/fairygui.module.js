@@ -15354,7 +15354,7 @@ class PopupMenu {
             let maxDelta = -1000;
             for (let i = 0; i < cnt; i++) {
                 let obj = this._list.getChildAt(i);
-                if (obj == null)
+                if (!(obj instanceof GButton))
                     continue;
                 let tf = obj.getTextField();
                 if (tf instanceof GTextField) {
