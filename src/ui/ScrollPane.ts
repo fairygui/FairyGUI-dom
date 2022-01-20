@@ -8,9 +8,8 @@ import { ByteBuffer } from "../utils/ByteBuffer";
 import { Timers } from "../utils/Timers";
 import { clamp, clamp01, lerp } from "../utils/ToolSet";
 import { Controller } from "./Controller";
-import { ScrollBarDisplayType, ScrollType } from "./FieldTypes";
+import { ListLayoutType, ScrollBarDisplayType, ScrollType } from "./FieldTypes";
 import { GComponent } from "./GComponent";
-import { GList } from "./GList";
 import { GObject } from "./GObject";
 import { GScrollBar } from "./GScrollBar";
 import { Margin } from "../math/Margin";
@@ -78,6 +77,8 @@ export class ScrollPane {
     private _refreshEventDispatching: boolean;
     private _dragged: boolean;
     private _hover?: boolean;
+    private _lastAutoScroll?: number;
+    private _autoScrollThresold?: number;
 
     private _tweening: number;
     private _tweenTime: Vec2;
@@ -136,6 +137,8 @@ export class ScrollPane {
         //disable the low level scroll
         this._owner.element.addEventListener("scroll", () => this._owner.element.scrollTo(0, 0));
         this._maskContainer.addEventListener("scroll", () => this._maskContainer.scrollTo(0, 0));
+
+        this._owner.element.addEventListener("dragover", evt => this.__dragOver(evt));
     }
 
     public setup(buffer: ByteBuffer): void {
@@ -1334,6 +1337,50 @@ export class ScrollPane {
         this.updateScrollBarVisible();
     }
 
+    private __dragOver(evt: DragEvent) {
+        let pt = this._maskContainer.globalToLocal(evt.pageX, evt.pageY);
+
+        let flag: number = 0;
+        let list: any = this._owner; //assume it is a list
+        if (this._overlapSize.y > 0 && list.layout != ListLayoutType.SingleRow) {
+            if (pt.y < 10)
+                flag = 1;
+            else if (pt.y > this._maskContainer.height - 10)
+                flag = 2;
+        }
+        if (this._overlapSize.x > 0 && list.layout != ListLayoutType.SingleColumn) {
+            if (pt.x < 10)
+                flag = 3;
+            else if (pt.x > this._maskContainer.width - 10)
+                flag = 4;
+        }
+
+        if (flag != 0) {
+            if (this._lastAutoScroll == null || performance.now() - this._lastAutoScroll > 1000)
+                this._autoScrollThresold = 0;
+            else
+                this._autoScrollThresold += performance.now() - this._lastAutoScroll;
+            this._lastAutoScroll = performance.now();
+            if (this._autoScrollThresold < 800)
+                return;
+
+            switch (flag) {
+                case 1:
+                    this.setPosY(this.posY - 10);
+                    break;
+                case 2:
+                    this.setPosY(this.posY + 10);
+                    break;
+                case 3:
+                    this.setPosX(this.posX - 10);
+                    break;
+                case 4:
+                    this.setPosX(this.posX + 10);
+                    break;
+            }
+        }
+    }
+
     private updateScrollBarPos(): void {
         if (this._vtScrollBar)
             this._vtScrollBar.setScrollPerc(this._overlapSize.y == 0 ? 0 : clamp(-this._container.y, 0, this._overlapSize.y) / this._overlapSize.y);
@@ -1381,7 +1428,8 @@ export class ScrollPane {
     }
 
     private getLoopPartSize(division: number, axis: AxisType): number {
-        return (this._contentSize[axis] + (axis == "x" ? (<GList>(this._owner)).columnGap : (<GList>(this._owner)).lineGap)) / division;
+        let list: any = this._owner; //assume it is a list
+        return (this._contentSize[axis] + (axis == "x" ? list.columnGap : list.lineGap)) / division;
     }
 
     private loopCheckingCurrent(): boolean {

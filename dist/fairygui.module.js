@@ -5394,6 +5394,7 @@ class ScrollPane {
         //disable the low level scroll
         this._owner.element.addEventListener("scroll", () => this._owner.element.scrollTo(0, 0));
         this._maskContainer.addEventListener("scroll", () => this._maskContainer.scrollTo(0, 0));
+        this._owner.element.addEventListener("dragover", evt => this.__dragOver(evt));
     }
     setup(buffer) {
         this._scrollType = buffer.readByte();
@@ -5467,6 +5468,8 @@ class ScrollPane {
                     this._vtScrollBar.element.visible = false;
                 if (this._hzScrollBar)
                     this._hzScrollBar.element.visible = false;
+                this._owner.on("roll_over", this.__rollOver, this);
+                this._owner.on("roll_out", this.__rollOut, this);
             }
         }
         else
@@ -6391,6 +6394,54 @@ class ScrollPane {
             this.setPosY(this._yPos + step * delta, false);
         }
     }
+    __rollOver() {
+        this._hover = true;
+        this.updateScrollBarVisible();
+    }
+    __rollOut() {
+        this._hover = false;
+        this.updateScrollBarVisible();
+    }
+    __dragOver(evt) {
+        let pt = this._maskContainer.globalToLocal(evt.pageX, evt.pageY);
+        let flag = 0;
+        let list = this._owner; //assume it is a list
+        if (this._overlapSize.y > 0 && list.layout != ListLayoutType.SingleRow) {
+            if (pt.y < 10)
+                flag = 1;
+            else if (pt.y > this._maskContainer.height - 10)
+                flag = 2;
+        }
+        if (this._overlapSize.x > 0 && list.layout != ListLayoutType.SingleColumn) {
+            if (pt.x < 10)
+                flag = 3;
+            else if (pt.x > this._maskContainer.width - 10)
+                flag = 4;
+        }
+        if (flag != 0) {
+            if (this._lastAutoScroll == null || performance.now() - this._lastAutoScroll > 1000)
+                this._autoScrollThresold = 0;
+            else
+                this._autoScrollThresold += performance.now() - this._lastAutoScroll;
+            this._lastAutoScroll = performance.now();
+            if (this._autoScrollThresold < 800)
+                return;
+            switch (flag) {
+                case 1:
+                    this.setPosY(this.posY - 10);
+                    break;
+                case 2:
+                    this.setPosY(this.posY + 10);
+                    break;
+                case 3:
+                    this.setPosX(this.posX - 10);
+                    break;
+                case 4:
+                    this.setPosX(this.posX + 10);
+                    break;
+            }
+        }
+    }
     updateScrollBarPos() {
         if (this._vtScrollBar)
             this._vtScrollBar.setScrollPerc(this._overlapSize.y == 0 ? 0 : clamp(-this._container.y, 0, this._overlapSize.y) / this._overlapSize.y);
@@ -6415,7 +6466,7 @@ class ScrollPane {
     updateScrollBarVisible2(bar) {
         if (this._scrollBarDisplayAuto)
             GTween.kill(bar, false, "alpha");
-        if (this._scrollBarDisplayAuto && this._tweening == 0 && !this._dragged && !bar.gripDragging) {
+        if (this._scrollBarDisplayAuto && !this._hover && this._tweening == 0 && !this._dragged && !bar.gripDragging) {
             if (bar.element.visible)
                 GTween.to(1, 0, 0.5).setDelay(0.5).onComplete(this.__barTweenComplete, this).setTarget(bar, "alpha");
         }
@@ -6430,7 +6481,8 @@ class ScrollPane {
         bar.element.visible = false;
     }
     getLoopPartSize(division, axis) {
-        return (this._contentSize[axis] + (axis == "x" ? (this._owner).columnGap : (this._owner).lineGap)) / division;
+        let list = this._owner; //assume it is a list
+        return (this._contentSize[axis] + (axis == "x" ? list.columnGap : list.lineGap)) / division;
     }
     loopCheckingCurrent() {
         var changed = false;
