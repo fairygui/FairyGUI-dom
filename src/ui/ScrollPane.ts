@@ -77,6 +77,7 @@ export class ScrollPane {
     private _footerLockedSize: number;
     private _refreshEventDispatching: boolean;
     private _dragged: boolean;
+    private _hover?: boolean;
 
     private _tweening: number;
     private _tweenTime: Vec2;
@@ -208,6 +209,9 @@ export class ScrollPane {
                     this._vtScrollBar.element.visible = false;
                 if (this._hzScrollBar)
                     this._hzScrollBar.element.visible = false;
+
+                this._owner.on("roll_over", this.__rollOver, this);
+                this._owner.on("roll_out", this.__rollOut, this);
             }
         }
         else
@@ -1320,6 +1324,16 @@ export class ScrollPane {
         }
     }
 
+    private __rollOver() {
+        this._hover = true;
+        this.updateScrollBarVisible();
+    }
+
+    private __rollOut() {
+        this._hover = false;
+        this.updateScrollBarVisible();
+    }
+
     private updateScrollBarPos(): void {
         if (this._vtScrollBar)
             this._vtScrollBar.setScrollPerc(this._overlapSize.y == 0 ? 0 : clamp(-this._container.y, 0, this._overlapSize.y) / this._overlapSize.y);
@@ -1350,7 +1364,7 @@ export class ScrollPane {
         if (this._scrollBarDisplayAuto)
             GTween.kill(bar, false, "alpha");
 
-        if (this._scrollBarDisplayAuto && this._tweening == 0 && !this._dragged && !bar.gripDragging) {
+        if (this._scrollBarDisplayAuto && !this._hover && this._tweening == 0 && !this._dragged && !bar.gripDragging) {
             if (bar.element.visible)
                 GTween.to(1, 0, 0.5).setDelay(0.5).onComplete(this.__barTweenComplete, this).setTarget(bar, "alpha");
         }
