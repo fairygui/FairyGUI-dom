@@ -9843,7 +9843,7 @@
             this.checkPopups();
         }
     }
-    global.GRoot = GRoot$1;
+    globalThis.GRoot = GRoot$1;
 
     class UBBParser {
         constructor() {
@@ -15442,7 +15442,7 @@
         }
     }
     UIObjectFactory$1.extensions = {};
-    global.UIObjectFactory = UIObjectFactory$1;
+    globalThis.UIObjectFactory = UIObjectFactory$1;
 
     var _inst$1;
     class DragDropManager {
@@ -17606,7 +17606,7 @@
             this.captors = new Array();
         }
     }
-    global.createUIElement = function (tagName, owner) {
+    globalThis.createUIElement = function (tagName, owner) {
         if (!customElements.get("fgui-div")) {
             customElements.define("fgui-div", UIElement, { extends: "div" });
             customElements.define("fgui-img", Image, { extends: "div" });

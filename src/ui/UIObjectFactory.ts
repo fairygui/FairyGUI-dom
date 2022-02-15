@@ -134,4 +134,4 @@ export class UIObjectFactory {
     }
 }
 
-global.UIObjectFactory = UIObjectFactory;
+globalThis.UIObjectFactory = UIObjectFactory;

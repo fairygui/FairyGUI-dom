@@ -779,7 +779,7 @@ export interface CustomTags {
     "fgui-stage": Stage,
 }
 
-global.createUIElement = function <K extends keyof CustomTags>(tagName: K, owner?: any): CustomTags[K] {
+globalThis.createUIElement = function <K extends keyof CustomTags>(tagName: K, owner?: any): CustomTags[K] {
     if (!customElements.get("fgui-div")) {
         customElements.define("fgui-div", UIElement, { extends: "div" });
         customElements.define("fgui-img", Image, { extends: "div" });

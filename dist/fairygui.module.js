@@ -9858,7 +9858,7 @@ class GRoot$1 extends GComponent {
         this.checkPopups();
     }
 }
-global.GRoot = GRoot$1;
+globalThis.GRoot = GRoot$1;
 
 class UBBParser {
     constructor() {
@@ -15457,7 +15457,7 @@ class UIObjectFactory$1 {
     }
 }
 UIObjectFactory$1.extensions = {};
-global.UIObjectFactory = UIObjectFactory$1;
+globalThis.UIObjectFactory = UIObjectFactory$1;
 
 var _inst$1;
 class DragDropManager {
@@ -17621,7 +17621,7 @@ class PointerInfo {
         this.captors = new Array();
     }
 }
-global.createUIElement = function (tagName, owner) {
+globalThis.createUIElement = function (tagName, owner) {
     if (!customElements.get("fgui-div")) {
         customElements.define("fgui-div", UIElement, { extends: "div" });
         customElements.define("fgui-img", Image, { extends: "div" });

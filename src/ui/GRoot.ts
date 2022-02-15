@@ -447,4 +447,4 @@ export class GRoot extends GComponent {
     }
 }
 
-global.GRoot = GRoot;
+globalThis.GRoot = GRoot;
