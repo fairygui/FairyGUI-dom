@@ -17029,7 +17029,7 @@ class Stage extends UIElement {
                 outline: none;
             }
 
-            .fgui-stage input[type=text] {
+            .fgui-stage input[type=text],input[type=password] {
                 resize : none;
                 overflow : scroll;
                 outline : none;
@@ -17041,7 +17041,7 @@ class Stage extends UIElement {
                 height : 100%;
             }
 
-            .fgui-stage input[type=text]:focus {
+            .fgui-stage input[type=text]:focus,input[type=password]:focus {
                 outline : none;
             }
 
@@ -17176,6 +17176,8 @@ class Stage extends UIElement {
                 free = this._pointers[j];
         }
         if (!pointer) {
+            if (type == 1 || type == 3)
+                return;
             pointer = free;
             if (!pointer)
                 return;
