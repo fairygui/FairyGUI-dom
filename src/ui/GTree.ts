@@ -1,6 +1,5 @@
 import { Event } from "../event/Event";
 import { ByteBuffer } from "../utils/ByteBuffer";
-import { Controller } from "./Controller";
 import { GComponent } from "./GComponent";
 import { GList } from "./GList";
 import { GObject } from "./GObject";
@@ -174,7 +173,7 @@ export class GTree extends GList {
             this.treeNodeWillExpand(node, true);
 
         if (node.onExpanded)
-            node.onExpanded();
+            node.onExpanded(true);
 
         if (node.cell == null)
             return;
@@ -195,6 +194,9 @@ export class GTree extends GList {
 
         if (this.treeNodeWillExpand)
             this.treeNodeWillExpand(node, false);
+
+        if (node.onExpanded)
+            node.onExpanded(false);
 
         if (node.cell == null)
             return;

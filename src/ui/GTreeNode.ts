@@ -11,21 +11,26 @@ export class GTreeNode {
     private _children: Array<GTreeNode>;
     private _expanded: boolean = false;
     private _level: number = 0;
+    private _indentLevel: number = 0;
+    private _addIndent?: number;
     private _tree: GTree;
     private _cell: GComponent;
     private _indentObj: GObject;
-    private _resURL: string;
+    private _resURL?: string;
     private _leafController: Controller;
     private _isFolder: boolean;
 
-    public onExpanded?: () => void;
+    public onExpanded?: (expand: boolean) => void;
 
     /** @internal */
     public _cellFromPool?: boolean;
 
-    constructor(isFolder?: boolean, resURL?: string) {
+    constructor(isFolder?: boolean, resURL?: string, addIndent?: number) {
         this._isFolder = isFolder;
-        this._resURL = resURL;
+        if (resURL)
+            this._resURL = resURL;
+        if (addIndent)
+            this._addIndent = addIndent;
         this._children = [];
     }
 
@@ -120,7 +125,7 @@ export class GTreeNode {
 
             this._indentObj = this._cell.getChild("indent");
             if (this._tree && this._indentObj)
-                this._indentObj.width = (this._level - 1) * this._tree.indent;
+                this._indentObj.width = Math.max(this._indentLevel - 1, 0) * this._tree.indent;
 
             let cc = this._cell.getController("expanded");
             if (cc) {
@@ -185,6 +190,7 @@ export class GTreeNode {
 
                 child._parent = this;
                 child._level = this._level + 1;
+                child._indentLevel = this._indentLevel + 1 + (child._addIndent != null ? child._addIndent : 0);
                 child._setTree(this._tree);
                 if (this._tree && this == this._tree.rootNode || this._cell && this._cell.parent && this._expanded)
                     this._tree._afterInserted(child);
@@ -329,7 +335,7 @@ export class GTreeNode {
         this._tree = value;
 
         if (this._tree && this._indentObj)
-            this._indentObj.width = (this._level - 1) * this._tree.indent;
+            this._indentObj.width = Math.max(this._indentLevel - 1, 0) * this._tree.indent;
 
         if (this._tree && this._tree.treeNodeWillExpand && this._expanded)
             this._tree.treeNodeWillExpand(this, true);
@@ -338,6 +344,7 @@ export class GTreeNode {
         for (var i: number = 0; i < cnt; i++) {
             var node: GTreeNode = this._children[i];
             node._level = this._level + 1;
+            node._indentLevel = this._indentLevel + 1 + (node._addIndent != null ? node._addIndent : 0);
             node._setTree(value);
         }
     }

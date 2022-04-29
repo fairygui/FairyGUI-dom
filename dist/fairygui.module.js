@@ -14640,11 +14640,15 @@ class GList extends GComponent {
 var s_n = 0;
 
 class GTreeNode {
-    constructor(isFolder, resURL) {
+    constructor(isFolder, resURL, addIndent) {
         this._expanded = false;
         this._level = 0;
+        this._indentLevel = 0;
         this._isFolder = isFolder;
-        this._resURL = resURL;
+        if (resURL)
+            this._resURL = resURL;
+        if (addIndent)
+            this._addIndent = addIndent;
         this._children = [];
     }
     set expanded(value) {
@@ -14720,7 +14724,7 @@ class GTreeNode {
             this._cell._treeNode = this;
             this._indentObj = this._cell.getChild("indent");
             if (this._tree && this._indentObj)
-                this._indentObj.width = (this._level - 1) * this._tree.indent;
+                this._indentObj.width = Math.max(this._indentLevel - 1, 0) * this._tree.indent;
             let cc = this._cell.getController("expanded");
             if (cc) {
                 cc.on("status_changed", this.__expandedStateChanged, this);
@@ -14770,6 +14774,7 @@ class GTreeNode {
                     this._leafController.selectedIndex = 0;
                 child._parent = this;
                 child._level = this._level + 1;
+                child._indentLevel = this._indentLevel + 1 + (child._addIndent != null ? child._addIndent : 0);
                 child._setTree(this._tree);
                 if (this._tree && this == this._tree.rootNode || this._cell && this._cell.parent && this._expanded)
                     this._tree._afterInserted(child);
@@ -14886,13 +14891,14 @@ class GTreeNode {
     _setTree(value) {
         this._tree = value;
         if (this._tree && this._indentObj)
-            this._indentObj.width = (this._level - 1) * this._tree.indent;
+            this._indentObj.width = Math.max(this._indentLevel - 1, 0) * this._tree.indent;
         if (this._tree && this._tree.treeNodeWillExpand && this._expanded)
             this._tree.treeNodeWillExpand(this, true);
         var cnt = this._children.length;
         for (var i = 0; i < cnt; i++) {
             var node = this._children[i];
             node._level = this._level + 1;
+            node._indentLevel = this._indentLevel + 1 + (node._addIndent != null ? node._addIndent : 0);
             node._setTree(value);
         }
     }
@@ -15035,7 +15041,7 @@ class GTree extends GList {
         if (this.treeNodeWillExpand)
             this.treeNodeWillExpand(node, true);
         if (node.onExpanded)
-            node.onExpanded();
+            node.onExpanded(true);
         if (node.cell == null)
             return;
         if (this.treeNodeRender)
@@ -15051,6 +15057,8 @@ class GTree extends GList {
         }
         if (this.treeNodeWillExpand)
             this.treeNodeWillExpand(node, false);
+        if (node.onExpanded)
+            node.onExpanded(false);
         if (node.cell == null)
             return;
         if (this.treeNodeRender)
