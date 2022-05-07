@@ -269,6 +269,8 @@ export class GRoot extends GComponent {
             if (yy < 0) {
                 yy = 0;
                 xx += sizeW / 2;
+                if (xx + popup.width > this.width)
+                    xx = this.width - popup.width;
             }
         }
 
