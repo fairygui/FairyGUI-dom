@@ -3069,8 +3069,8 @@
         set touchable(value) {
             if (this._touchable != value) {
                 this._touchable = value;
+                this.handleTouchableChanged();
                 this.updateGear(3);
-                this._element.touchable = this._touchable;
             }
         }
         get grayed() {
@@ -3470,6 +3470,9 @@
         }
         handleAlphaChanged() {
             this._element.alpha = this._alpha;
+        }
+        handleTouchableChanged() {
+            this._element.touchable = this._touchable;
         }
         handleVisibleChanged() {
             this._element.visible = this.internalVisible2;
@@ -11377,6 +11380,13 @@
             }
             else
                 super.handleGrayedChanged();
+        }
+        handleTouchableChanged() {
+            if (!this.touchable) {
+                this._over = false;
+                this.setCurrentState();
+            }
+            super.handleTouchableChanged();
         }
         getProp(index) {
             switch (index) {

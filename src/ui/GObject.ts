@@ -371,8 +371,8 @@ export class GObject extends EventDispatcher {
     public set touchable(value: boolean) {
         if (this._touchable != value) {
             this._touchable = value;
+            this.handleTouchableChanged();
             this.updateGear(3);
-            this._element.touchable = this._touchable;
         }
     }
 
@@ -875,6 +875,10 @@ export class GObject extends EventDispatcher {
 
     protected handleAlphaChanged(): void {
         this._element.alpha = this._alpha;
+    }
+
+    protected handleTouchableChanged(): void {
+        this._element.touchable = this._touchable;
     }
 
     public handleVisibleChanged(): void {

@@ -320,6 +320,15 @@ export class GButton extends GComponent {
             super.handleGrayedChanged();
     }
 
+    protected handleTouchableChanged(): void {
+        if (!this.touchable) {
+            this._over = false;
+            this.setCurrentState();
+        }
+
+        super.handleTouchableChanged();
+    }
+
     public getProp(index: number): any {
         switch (index) {
             case ObjectPropID.Color:
