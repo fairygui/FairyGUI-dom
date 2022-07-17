@@ -243,6 +243,8 @@ export class GRoot extends GComponent {
             }
         }
 
+        (<any>popup).popupTarget = target;
+
         this.addChild(popup);
         this.adjustModalLayer();
 
@@ -304,13 +306,17 @@ export class GRoot extends GComponent {
         return this._popupStack.length != 0;
     }
 
-    private closePopup(target: GObject): void {
-        if (target.parent) {
-            if (target instanceof GWindow)
-                target.hide();
+    private closePopup(popup: GObject): void {
+        if (popup.parent) {
+            if (popup instanceof GWindow)
+                popup.hide();
             else
-                this.removeChild(target);
+                this.removeChild(popup);
         }
+
+        let focus: GObject = (<any>popup).popupTarget;
+        if (focus && !focus.isDisposed && focus.onStage)
+            this.element.stage.setFocus(focus.element, true);
     }
 
     public showTooltips(msg: string): void {

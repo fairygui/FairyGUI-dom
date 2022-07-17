@@ -9685,6 +9685,7 @@ class GRoot$1 extends GComponent {
                 p = p.parent;
             }
         }
+        popup.popupTarget = target;
         this.addChild(popup);
         this.adjustModalLayer();
         var pos;
@@ -9739,13 +9740,16 @@ class GRoot$1 extends GComponent {
     get hasAnyPopup() {
         return this._popupStack.length != 0;
     }
-    closePopup(target) {
-        if (target.parent) {
-            if (target instanceof GWindow)
-                target.hide();
+    closePopup(popup) {
+        if (popup.parent) {
+            if (popup instanceof GWindow)
+                popup.hide();
             else
-                this.removeChild(target);
+                this.removeChild(popup);
         }
+        let focus = popup.popupTarget;
+        if (focus && !focus.isDisposed && focus.onStage)
+            this.element.stage.setFocus(focus.element, true);
     }
     showTooltips(msg) {
         if (this._defaultTooltipWin == null) {
