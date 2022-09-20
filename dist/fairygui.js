@@ -14711,6 +14711,8 @@
         set cell(value) {
             if (this._cell) {
                 this._cell._treeNode = null;
+                this._indentObj = null;
+                this._leafController = null;
                 let cc = this._cell.getController("expanded");
                 if (cc)
                     cc.off("status_changed", this.__expandedStateChanged, this);
