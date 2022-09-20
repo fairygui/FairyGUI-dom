@@ -105,6 +105,8 @@ export class GTreeNode {
     public set cell(value: GComponent) {
         if (this._cell) {
             this._cell._treeNode = null;
+            this._indentObj = null;
+            this._leafController = null;
 
             let cc = this._cell.getController("expanded");
             if (cc)
