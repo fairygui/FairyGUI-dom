@@ -65,7 +65,7 @@ export class Controller extends EventDispatcher {
         }
     }
 
-    public get previsousIndex(): number {
+    public get previousIndex(): number {
         return this._previousIndex;
     }
 

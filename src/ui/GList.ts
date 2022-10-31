@@ -37,6 +37,7 @@ export class GList extends GComponent {
 
     private _lastSelectedIndex: number = 0;
     private _triggerFocusEvents?: boolean;
+    private _keySelectEvent?: string;
 
     private _pool: GObjectPool;
 
@@ -551,9 +552,10 @@ export class GList extends GComponent {
         }
     }
 
-    public enableArrowKeyNavigation(enabled: boolean) {
+    public enableArrowKeyNavigation(enabled: boolean, keySelectEvent?: string) {
         if (enabled) {
             this.tabStopChildren = true;
+            this._keySelectEvent = keySelectEvent != null ? keySelectEvent : "click_item";
             this.on("key_down", this.__keydown, this);
         }
         else {
@@ -585,19 +587,23 @@ export class GList extends GComponent {
                 break;
         }
 
-        if (index != -1) {
-            index = this.itemIndexToChildIndex(index);
-            if (index != -1)
-                this.dispatchItemEvent(this.getChildAt(index), evt);
-
+        if (index != -1)
             evt.stopPropagation();
-        }
     }
 
     public handleArrowKey(dir: number): number {
         var curIndex: number = this.selectedIndex;
-        if (curIndex == -1)
-            return -1;
+        if (curIndex == -1) {
+            if (this.numChildren > 0) {
+                this.clearSelection();
+                this.addSelection(0, true);
+                if (this._keySelectEvent)
+                    this.emit(this._keySelectEvent, this.getChildAt(0));
+                return 0;
+            }
+            else
+                return -1;
+        }
 
         let index = curIndex;
         switch (dir) {
@@ -731,6 +737,11 @@ export class GList extends GComponent {
         if (index != curIndex && index >= 0 && index < this.numItems) {
             this.clearSelection();
             this.addSelection(index, true);
+            if (this._keySelectEvent) {
+                let childIndex = this.itemIndexToChildIndex(index);
+                if (childIndex != -1)
+                    this.emit(this._keySelectEvent, this.getChildAt(childIndex));
+            }
             return index;
         }
         else

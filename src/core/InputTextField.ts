@@ -43,6 +43,10 @@ export class InputTextField extends UIElement {
         });
     }
 
+    public get htmlInput() {
+        return this._input;
+    }
+
     public get textFormat(): TextFormat {
         return this._textFormat;
     }

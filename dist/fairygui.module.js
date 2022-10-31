@@ -12952,9 +12952,10 @@ class GList extends GComponent {
                 obj.emit(eventType);
         }
     }
-    enableArrowKeyNavigation(enabled) {
+    enableArrowKeyNavigation(enabled, keySelectEvent) {
         if (enabled) {
             this.tabStopChildren = true;
+            this._keySelectEvent = keySelectEvent != null ? keySelectEvent : "click_item";
             this.on("key_down", this.__keydown, this);
         }
         else {
@@ -12980,17 +12981,22 @@ class GList extends GComponent {
                 index = this.handleArrowKey(5);
                 break;
         }
-        if (index != -1) {
-            index = this.itemIndexToChildIndex(index);
-            if (index != -1)
-                this.dispatchItemEvent(this.getChildAt(index), evt);
+        if (index != -1)
             evt.stopPropagation();
-        }
     }
     handleArrowKey(dir) {
         var curIndex = this.selectedIndex;
-        if (curIndex == -1)
-            return -1;
+        if (curIndex == -1) {
+            if (this.numChildren > 0) {
+                this.clearSelection();
+                this.addSelection(0, true);
+                if (this._keySelectEvent)
+                    this.emit(this._keySelectEvent, this.getChildAt(0));
+                return 0;
+            }
+            else
+                return -1;
+        }
         let index = curIndex;
         switch (dir) {
             case 1: //up
@@ -13119,6 +13125,11 @@ class GList extends GComponent {
         if (index != curIndex && index >= 0 && index < this.numItems) {
             this.clearSelection();
             this.addSelection(index, true);
+            if (this._keySelectEvent) {
+                let childIndex = this.itemIndexToChildIndex(index);
+                if (childIndex != -1)
+                    this.emit(this._keySelectEvent, this.getChildAt(childIndex));
+            }
             return index;
         }
         else
