@@ -41,21 +41,21 @@ export class PopupMenu {
         this._contentPane.dispose();
     }
 
-    public addItem(caption: string, handler?: Function): GButton {
-        var item: GButton = this.createItem(caption, handler);
+    public addItem(caption: string, handler?: Function, target?: any): GButton {
+        var item: GButton = this.createItem(caption, handler, target);
         this._list.addChild(item);
 
         return item;
     }
 
-    public addItemAt(caption: string, index: number, handler?: Function): GButton {
-        var item: GButton = this.createItem(caption, handler);
+    public addItemAt(caption: string, index: number, handler?: Function, target?: any): GButton {
+        var item: GButton = this.createItem(caption, handler, target);
         this._list.addChildAt(item, index);
 
         return item;
     }
 
-    private createItem(caption: string, handler?: Function): GButton {
+    private createItem(caption: string, handler?: Function, target?: any): GButton {
         var item: GButton = <GButton>this._list.getFromPool();
         item.title = caption;
         item.data = handler;
@@ -63,7 +63,8 @@ export class PopupMenu {
         var c: Controller = item.getController("checked");
         if (c)
             c.selectedIndex = 0;
-        item.on(EVENT_TYPE, handler);
+        item.offAll(EVENT_TYPE);
+        item.on(EVENT_TYPE, handler, target);
         return item;
     }
 

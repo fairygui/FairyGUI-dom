@@ -5155,7 +5155,7 @@ class Controller extends EventDispatcher {
             this.changing = false;
         }
     }
-    get previsousIndex() {
+    get previousIndex() {
         return this._previousIndex;
     }
     get selectedPage() {
@@ -15259,17 +15259,17 @@ class PopupMenu {
     dispose() {
         this._contentPane.dispose();
     }
-    addItem(caption, handler) {
-        var item = this.createItem(caption, handler);
+    addItem(caption, handler, target) {
+        var item = this.createItem(caption, handler, target);
         this._list.addChild(item);
         return item;
     }
-    addItemAt(caption, index, handler) {
-        var item = this.createItem(caption, handler);
+    addItemAt(caption, index, handler, target) {
+        var item = this.createItem(caption, handler, target);
         this._list.addChildAt(item, index);
         return item;
     }
-    createItem(caption, handler) {
+    createItem(caption, handler, target) {
         var item = this._list.getFromPool();
         item.title = caption;
         item.data = handler;
@@ -15277,7 +15277,8 @@ class PopupMenu {
         var c = item.getController("checked");
         if (c)
             c.selectedIndex = 0;
-        item.on(EVENT_TYPE, handler);
+        item.offAll(EVENT_TYPE);
+        item.on(EVENT_TYPE, handler, target);
         return item;
     }
     addSeperator(index) {
@@ -16447,6 +16448,9 @@ class InputTextField extends UIElement {
         this.$owner.on("focus_in", () => {
             this._input.focus();
         });
+    }
+    get htmlInput() {
+        return this._input;
     }
     get textFormat() {
         return this._textFormat;
