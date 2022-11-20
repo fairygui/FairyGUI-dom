@@ -572,7 +572,7 @@ export class ScrollPane {
         if (this._overlapSize.y > 0) {
             var bottom: number = this._yPos + this._viewSize.y;
             if (setFirst || rect.y <= this._yPos) {
-                if (rect.y + rect.height >= bottom) //if an item size is large than viewSize, dont scroll
+                if (!setFirst && rect.y + rect.height >= bottom) //if an item size is large than viewSize, dont scroll
                     return;
                 if (this._pageMode)
                     this.setPosY(Math.floor(rect.y / this._pageSize.y) * this._pageSize.y, ani);
@@ -591,7 +591,7 @@ export class ScrollPane {
         if (this._overlapSize.x > 0) {
             var right: number = this._xPos + this._viewSize.x;
             if (setFirst || rect.x <= this._xPos) {
-                if (rect.x + rect.width >= right) //if an item size is large than viewSize, dont scroll
+                if (!setFirst && rect.x + rect.width >= right) //if an item size is large than viewSize, dont scroll
                     return;
 
                 if (this._pageMode)
