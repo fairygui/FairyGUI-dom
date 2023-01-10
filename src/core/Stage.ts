@@ -135,6 +135,7 @@ export class Stage extends UIElement implements IStage {
 
         ownerWindow.addEventListener('keydown', this.onKeydown.bind(this));
         ownerWindow.addEventListener('keyup', this.onKeyup.bind(this));
+        ownerWindow.addEventListener('blur', this.onWindowBlur.bind(this));
 
         ownerWindow.requestAnimationFrame(this.checkNextFocus.bind(this));
     }
@@ -503,7 +504,11 @@ export class Stage extends UIElement implements IStage {
         let obj = pointer.lastRollOver;
         while (obj != null) {
             this._rollOutChain.push(obj);
-            obj = obj.parent;
+            let p = obj.parent;
+            if (!p) //maybe it was hide by controller
+                obj = obj.$owner?.parent?.element;
+            else
+                obj = p;
         }
         pointer.lastRollOver = pointer.target;
 
@@ -739,6 +744,14 @@ export class Stage extends UIElement implements IStage {
                 else
                     this.setFocus(nextFocus);
             }
+        }
+    }
+
+    private onWindowBlur() {
+        let pointer = this.getPointer(-1);
+        if (pointer) {
+            pointer.target = null;
+            this.handleRollOver(pointer);
         }
     }
 }

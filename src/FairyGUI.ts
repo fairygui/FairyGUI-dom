@@ -68,6 +68,10 @@ export { Pool } from "./utils/Pool";
 export { ColorMatrix } from "./utils/ColorMatrix";
 export { Timers } from "./utils/Timers";
 
+export { XML } from "./utils/xml/XML";
+export { XMLIterator } from "./utils/xml/XMLIterator";
+export { XMLUtils } from "./utils/xml/XMLUtils";
+
 export { Color } from "./math/Color"
 export { Margin } from "./math/Margin"
 export { Rect } from "./math/Rect"

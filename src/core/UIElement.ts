@@ -276,7 +276,7 @@ export class UIElement extends HTMLDivElement {
         let str: string;
         if (!this._touchable || !this._opaque || this._touchDisabled)
             str = "none";
-        else if (this.parent && !this.parent._opaque)
+        else if (this._parent && !this._parent._opaque)
             str = "auto";
         else
             str = "";
@@ -543,7 +543,7 @@ export class UIElement extends HTMLDivElement {
         let arr = ev._callChain;
 
         this.traverseVisible(obj => {
-            if (obj.$owner)
+            if (obj.$owner && !obj.$owner.isDisposed)
                 arr.push(obj.$owner);
         });
 
