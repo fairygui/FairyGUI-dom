@@ -61,29 +61,16 @@ export class UIPackage {
         return _instByName[name];
     }
 
-    public static loadPackage(url: string): Promise<UIPackage> {
+    public static async loadPackage(url: string): Promise<UIPackage> {
         if (!url.endsWith("/"))
             url += "/";
-        return new Promise<UIPackage>(resolve => {
-            let pkg: UIPackage = _instById[url];
-            if (pkg) {
-                resolve(pkg);
-                return;
-            }
-
-            let request = new HttpRequest();
-            request.send(url + "package.xml", null, "get", "arraybuffer");
-            request.on("complete", (evt: Event) => {
-                let pkg: UIPackage = new UIPackage();
-                pkg.loadPackage(new ByteBuffer(evt.data), url);
-
-                _instById[pkg.id] = pkg;
-                _instByName[pkg.name] = pkg;
-                _instById[pkg.path] = pkg;
-
-                resolve(pkg);
-            });
-        });
+        const data = await AssetLoader.load(url + "package.xml");
+        let pkg: UIPackage = new UIPackage();
+        pkg.loadPackage(new ByteBuffer(data), url);
+        _instById[pkg.id] = pkg;
+        _instByName[pkg.name] = pkg;
+        _instById[pkg.path] = pkg;
+        return pkg;
     }
 
     public static removePackage(packageIdOrName: string): void {
