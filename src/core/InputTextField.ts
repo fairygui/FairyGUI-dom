@@ -2,7 +2,6 @@ import { convertToHtmlColor } from "../utils/ToolSet";
 import { defaultParser } from "../utils/UBBParser";
 import { UIElement } from "./UIElement";
 import { TextFormat } from "./TextFormat";
-import { UIConfig } from "../ui/UIConfig";
 
 type InputElement = HTMLTextAreaElement | HTMLInputElement;
 
@@ -52,14 +51,10 @@ export class InputTextField extends UIElement {
     }
 
     public applyFormat(): void {
-        let fontName: string = this._textFormat.font;
-        if (!fontName)
-            fontName = UIConfig.defaultFont;
-
         this._input.style.textAlign = this._textFormat.align;
         this._input.style.verticalAlign = this._textFormat.verticalAlign;
         this._input.style.fontSize = this._textFormat.size + "px";
-        this._input.style.fontFamily = fontName;
+        this._input.style.fontFamily = this._textFormat.font;
         this._input.style.color = convertToHtmlColor(this._textFormat.color);
     }
 

@@ -1,5 +1,4 @@
 import { AutoSizeType } from "../ui/FieldTypes";
-import { UIConfig } from "../ui/UIConfig";
 import { convertToHtmlColor } from "../utils/ToolSet";
 import { UIElement } from "./UIElement";
 import { TextFormat } from "./TextFormat";
@@ -37,10 +36,7 @@ export class TextField extends UIElement {
         super.init();
 
         this._span = document.createElement("span");
-        this._span.style.position = "absolute";
-        this._span.style.padding = "2px";
-        this._span.style.boxSizing = "border-box";
-        this._span.style.whiteSpace = "pre-wrap";
+        this._span.className = "fgui-text";
         this.appendChild(this._span);
     }
 
@@ -49,15 +45,8 @@ export class TextField extends UIElement {
     }
 
     public applyFormat(): void {
-        let fontName: string = this._textFormat.font;
-        if (!fontName)
-            fontName = UIConfig.defaultFont;
-
         this._span.style.fontSize = this._textFormat.size + "px";
-        if (fontName)
-            this._span.style.fontFamily = fontName;
-        else
-            this._span.style.fontFamily = "";
+        this._span.style.fontFamily = this._textFormat.font;
         this._span.style.lineHeight = (this._textFormat.size + this._textFormat.lineSpacing) + "px";
         this._span.style.color = convertToHtmlColor(this._textFormat.color);
         this._span.style.fontWeight = this._textFormat.bold ? "bold" : "";
@@ -118,7 +107,7 @@ export class TextField extends UIElement {
         if (!this.isConnected || (this._text.length > 0 && this._span.clientWidth == 0)) {
             usingHelper = true;
             if (!textMeasureHelper.parentElement)
-                document.body.appendChild(textMeasureHelper);
+                window.fguiStage.appendChild(textMeasureHelper);
             textMeasureHelper.appendChild(this._span);
         }
 
