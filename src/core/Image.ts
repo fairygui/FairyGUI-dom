@@ -11,6 +11,8 @@ export class Image extends UIElement {
     protected _textureScale: Vec2;
     protected _tileGridIndice: number = 0;
 
+    private _blobURL: string;
+
     private _timerID_1: number = 0;
 
     constructor() {
@@ -139,19 +141,41 @@ export class Image extends UIElement {
         this.style.filter = filter;
     }
 
+    public dispose(): void {
+        super.dispose();
+        this.returnBlobURL();
+    }
+
+    private returnBlobURL(){
+        if(this._blobURL){
+            AssetLoader.returnBlobURL(this._blobURL);
+            this._blobURL = null;
+        }
+    }
+
     protected refresh(): void {
         if (this._timerID_1 != 0)
             return;
-        this._timerID_1 = window.requestAnimationFrame(() => {
+        this._timerID_1 = window.requestAnimationFrame(async () => {
             this._timerID_1 = 0;
-
+            this.returnBlobURL();
             if (!this._src) {
+                this.style.backgroundImage = "none";
+                return;
+            }
+            let data = await AssetLoader.load(this._src);
+            if(data == null){
+                this.style.backgroundImage = "none";
+                return;
+            }
+            let src = this._blobURL = AssetLoader.getBlobURL(this._src);
+            if(src == null){
                 this.style.backgroundImage = "none";
                 return;
             }
 
             if (this._scaleByTile) {
-                this.style.backgroundImage = "url('" + this._src + "')";
+                this.style.backgroundImage = "url('" + src + "')";
                 if (this._textureScale.x != 1 || this._textureScale.y != 1)
                     this.style.backgroundSize = this._textureScale.x + "px " + this._textureScale.y + "px";
                 else
@@ -161,7 +185,7 @@ export class Image extends UIElement {
             else if (this._scale9Grid) {
                 this.style.boxSizing = "border-box";
                 this.style.backgroundImage = "none";
-                this.style.borderImage = "url('" + this._src + "')";
+                this.style.borderImage = "url('" + src + "')";
 
                 if (this._textureScale.x != 1 || this._textureScale.y != 1)
                     this.style.borderImageWidth = Math.floor(this._scale9Grid.top / this._textureScale.y) + "px " + Math.floor(this._scale9Grid.right / this._textureScale.x) + "px " + Math.floor(this._scale9Grid.bottom / this._textureScale.y) + "px " + Math.floor(this._scale9Grid.left / this._textureScale.x) + "px"
@@ -175,7 +199,7 @@ export class Image extends UIElement {
                     this.style.borderImageRepeat = "";
             }
             else {
-                this.style.backgroundImage = "url('" + this._src + "')";
+                this.style.backgroundImage = "url('" + src + "')";
                 this.style.backgroundSize = "100% 100%";
                 this.style.backgroundRepeat = "no-repeat";
             }
