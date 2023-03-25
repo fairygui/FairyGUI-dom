@@ -5,7 +5,7 @@ import { TextFormat } from "./TextFormat";
 import { Vec2 } from "../math/Vec2";
 
 var textMeasureHelper: HTMLDivElement = document.createElement("div");
-textMeasureHelper.id = "text-helper";
+textMeasureHelper.id = "fgui-text-helper";
 textMeasureHelper.style.position = "absolute";
 textMeasureHelper.style.left = "-10000px";
 textMeasureHelper.style.top = "-10000px";
@@ -107,7 +107,7 @@ export class TextField extends UIElement {
         if (!this.isConnected || (this._text.length > 0 && this._span.clientWidth == 0)) {
             usingHelper = true;
             if (!textMeasureHelper.parentElement)
-                window.fguiStage.appendChild(textMeasureHelper);
+                document.body.appendChild(textMeasureHelper);
             textMeasureHelper.appendChild(this._span);
         }
 
