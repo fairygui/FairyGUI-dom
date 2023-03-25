@@ -460,13 +460,15 @@ export class UIElement extends HTMLDivElement {
         if (oldIndex == index) return;
         if (oldIndex == -1) throw 'Not a child';
         this._children.splice(oldIndex, 1);
-        if (index >= this._children.length - 1) {
+        if (index >= this._children.length) {
             this._children.push(child);
             this.appendChild(child);
         }
         else {
             this._children.splice(index, 0, child);
-            let refNode = this._children[index + 1];
+            if (index < oldIndex)
+                index++;
+            let refNode = this._children[index];
             this.insertBefore(child, refNode);
         }
     }

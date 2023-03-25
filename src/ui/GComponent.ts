@@ -330,8 +330,6 @@ export class GComponent extends GObject {
                     if (g.element.parent)
                         displayIndex++;
                 }
-                if (displayIndex == this._container.numChildren)
-                    displayIndex--;
                 this._container.setChildIndex(child.element, displayIndex);
             }
             else if (this._childrenRenderOrder == ChildrenRenderOrder.Descent) {
@@ -340,8 +338,6 @@ export class GComponent extends GObject {
                     if (g.element.parent)
                         displayIndex++;
                 }
-                if (displayIndex == this._container.numChildren)
-                    displayIndex--;
                 this._container.setChildIndex(child.element, displayIndex);
             }
             else {
