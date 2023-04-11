@@ -8589,8 +8589,6 @@
                         if (g.element.parent)
                             displayIndex++;
                     }
-                    if (displayIndex == this._container.numChildren)
-                        displayIndex--;
                     this._container.setChildIndex(child.element, displayIndex);
                 }
                 else if (this._childrenRenderOrder == exports.ChildrenRenderOrder.Descent) {
@@ -8599,8 +8597,6 @@
                         if (g.element.parent)
                             displayIndex++;
                     }
-                    if (displayIndex == this._container.numChildren)
-                        displayIndex--;
                     this._container.setChildIndex(child.element, displayIndex);
                 }
                 else {
@@ -9491,6 +9487,19 @@
 
     var _inst;
     class GRoot$1 extends GComponent {
+        static get inst() {
+            if (!_inst) {
+                _inst = new GRoot$1();
+            }
+            return _inst;
+        }
+        static getInst(obj) {
+            let stage = obj.element.stage;
+            if (stage)
+                return stage.$owner;
+            else
+                return GRoot$1.inst;
+        }
         constructor(ownerWindow) {
             super();
             if (!_inst)
@@ -9510,19 +9519,6 @@
             ownerWindow.addEventListener('resize', () => {
                 this.setSize(this._element.window.innerWidth, this._element.window.innerHeight);
             });
-        }
-        static get inst() {
-            if (!_inst) {
-                _inst = new GRoot$1();
-            }
-            return _inst;
-        }
-        static getInst(obj) {
-            let stage = obj.element.stage;
-            if (stage)
-                return stage.$owner;
-            else
-                return GRoot$1.inst;
         }
         createElement() {
             this._element = createUIElement("fgui-stage", this);
@@ -13127,6 +13123,8 @@
             this.setSelectionOnEvent(item, evt);
             if (this._scrollPane && this.scrollItemToViewOnClick)
                 this._scrollPane.scrollToView(item, true);
+            if (evt.input.isDblClick && (evt.initiator.tagName == "INPUT" || evt.initiator.tagName == "TEXTAREA"))
+                return;
             this.dispatchItemEvent(item, evt);
         }
         dispatchItemEvent(item, evt) {
@@ -15484,6 +15482,11 @@
 
     var _inst$1;
     class DragDropManager {
+        static get inst() {
+            if (!_inst$1)
+                _inst$1 = new DragDropManager();
+            return _inst$1;
+        }
         constructor() {
             let a = this._agent = new GLoader();
             a.draggable = true;
@@ -15494,11 +15497,6 @@
             a.verticalAlign = "middle";
             a.sortingOrder = 1000000;
             a.on("drag_end", this.__dragEnd, this);
-        }
-        static get inst() {
-            if (!_inst$1)
-                _inst$1 = new DragDropManager();
-            return _inst$1;
         }
         get dragAgent() {
             return this._agent;
@@ -16067,13 +16065,15 @@
             if (oldIndex == -1)
                 throw 'Not a child';
             this._children.splice(oldIndex, 1);
-            if (index >= this._children.length - 1) {
+            if (index >= this._children.length) {
                 this._children.push(child);
                 this.appendChild(child);
             }
             else {
                 this._children.splice(index, 0, child);
-                let refNode = this._children[index + 1];
+                if (index < oldIndex)
+                    index++;
+                let refNode = this._children[index];
                 this.insertBefore(child, refNode);
             }
         }
@@ -16243,24 +16243,15 @@
         init() {
             super.init();
             this._span = document.createElement("span");
-            this._span.style.position = "absolute";
-            this._span.style.padding = "2px";
-            this._span.style.boxSizing = "border-box";
-            this._span.style.whiteSpace = "pre-wrap";
+            this._span.className = "fgui-text";
             this.appendChild(this._span);
         }
         get textFormat() {
             return this._textFormat;
         }
         applyFormat() {
-            let fontName = this._textFormat.font;
-            if (!fontName)
-                fontName = UIConfig.defaultFont;
             this._span.style.fontSize = this._textFormat.size + "px";
-            if (fontName)
-                this._span.style.fontFamily = fontName;
-            else
-                this._span.style.fontFamily = "";
+            this._span.style.fontFamily = this._textFormat.font;
             this._span.style.lineHeight = (this._textFormat.size + this._textFormat.lineSpacing) + "px";
             this._span.style.color = convertToHtmlColor(this._textFormat.color);
             this._span.style.fontWeight = this._textFormat.bold ? "bold" : "";
@@ -16310,7 +16301,7 @@
             if (!this.isConnected || (this._text.length > 0 && this._span.clientWidth == 0)) {
                 usingHelper = true;
                 if (!textMeasureHelper.parentElement)
-                    document.body.appendChild(textMeasureHelper);
+                    window.fguiStage.appendChild(textMeasureHelper);
                 textMeasureHelper.appendChild(this._span);
             }
             if (tmpChangWrapping && this._span.clientWidth > this._maxWidth) {
@@ -16441,13 +16432,10 @@
             return this._textFormat;
         }
         applyFormat() {
-            let fontName = this._textFormat.font;
-            if (!fontName)
-                fontName = UIConfig.defaultFont;
             this._input.style.textAlign = this._textFormat.align;
             this._input.style.verticalAlign = this._textFormat.verticalAlign;
             this._input.style.fontSize = this._textFormat.size + "px";
-            this._input.style.fontFamily = fontName;
+            this._input.style.fontFamily = this._textFormat.font;
             this._input.style.color = convertToHtmlColor(this._textFormat.color);
         }
         get text() {
@@ -17005,6 +16993,9 @@
     const maxPointer = 10;
     var anyPointerInput = 0;
     class Stage extends UIElement {
+        static get anyInput() {
+            return anyPointerInput > 0 || isAnyEditing;
+        }
         constructor() {
             super();
             this._pointers = [];
@@ -17016,9 +17007,6 @@
             this._focusInChain = [];
             this._focusHistory = [];
             this.is_stage = true;
-        }
-        static get anyInput() {
-            return anyPointerInput > 0 || isAnyEditing;
         }
         setWindow(ownerWindow) {
             this._window = ownerWindow;
@@ -17049,11 +17037,24 @@
                 -khtml-user-select: none;
                 -webkit-user-select: none; 
                 -ms-user-select:none;
+                position: absolute;
+                font-family : ${UIConfig.defaultFont};
+            }
+
+            .fgui-stage div {
+                position: absolute;
             }
 
             .fgui-stage div:focus {
                 outline: none;
             }
+
+            .fgui-text {
+                position: absolute;
+                padding: 2px;
+                box-sizing: border-box;
+                white-space: pre-wrap;
+            } 
 
             .fgui-stage input[type=text],input[type=password] {
                 resize : none;
@@ -17065,6 +17066,7 @@
                 background : transparent;
                 width : 100%;
                 height : 100%;
+                font-family : ${UIConfig.defaultFont};
             }
 
             .fgui-stage input[type=text]:focus,input[type=password]:focus {
@@ -17082,6 +17084,7 @@
                 background : transparent;
                 width : 100%;
                 height : 100%;
+                font-family : ${UIConfig.defaultFont};
             }
 
             .fgui-stage textarea:focus {
@@ -17672,7 +17675,6 @@
             customElements.define("fgui-stage", Stage, { extends: "div" });
         }
         let ele = document.createElement("div", { is: tagName });
-        ele.style.position = "absolute";
         ele.$owner = owner;
         ele.init();
         return ele;
@@ -17689,10 +17691,6 @@
     ];
     const LENGTH = IDENTITY_MATRIX.length;
     class ColorMatrix {
-        constructor() {
-            this.matrix = new Array(LENGTH);
-            this.reset();
-        }
         static create(p_brightness, p_contrast, p_saturation, p_hue) {
             var ret = new ColorMatrix();
             ret.adjustColor(p_brightness, p_contrast, p_saturation, p_hue);
@@ -17709,6 +17707,10 @@
                 result[i] = mat.matrix[i];
             }
             return result;
+        }
+        constructor() {
+            this.matrix = new Array(LENGTH);
+            this.reset();
         }
         reset() {
             for (var i = 0; i < LENGTH; i++) {

@@ -758,6 +758,9 @@ export class GList extends GComponent {
         if (this._scrollPane && this.scrollItemToViewOnClick)
             this._scrollPane.scrollToView(item, true);
 
+        if (evt.input.isDblClick && (evt.initiator.tagName == "INPUT" || evt.initiator.tagName == "TEXTAREA"))
+            return;
+
         this.dispatchItemEvent(item, evt);
     }
 

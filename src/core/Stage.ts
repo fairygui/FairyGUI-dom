@@ -9,6 +9,7 @@ import { Shape } from "./Shape";
 import { Image } from "./Image";
 import { MovieClip } from "./MovieClip";
 import { IStage } from "./IStage";
+import { UIConfig } from "../ui/UIConfig";
 
 const clickTestThreshold = 10;
 const maxPointer = 10;
@@ -79,11 +80,24 @@ export class Stage extends UIElement implements IStage {
                 -khtml-user-select: none;
                 -webkit-user-select: none; 
                 -ms-user-select:none;
+                position: absolute;
+                font-family : ${UIConfig.defaultFont};
+            }
+
+            .fgui-stage div {
+                position: absolute;
             }
 
             .fgui-stage div:focus {
                 outline: none;
             }
+
+            .fgui-text {
+                position: absolute;
+                padding: 2px;
+                box-sizing: border-box;
+                white-space: pre-wrap;
+            } 
 
             .fgui-stage input[type=text],input[type=password] {
                 resize : none;
@@ -95,6 +109,7 @@ export class Stage extends UIElement implements IStage {
                 background : transparent;
                 width : 100%;
                 height : 100%;
+                font-family : ${UIConfig.defaultFont};
             }
 
             .fgui-stage input[type=text]:focus,input[type=password]:focus {
@@ -112,6 +127,7 @@ export class Stage extends UIElement implements IStage {
                 background : transparent;
                 width : 100%;
                 height : 100%;
+                font-family : ${UIConfig.defaultFont};
             }
 
             .fgui-stage textarea:focus {
@@ -807,7 +823,6 @@ globalThis.createUIElement = function <K extends keyof CustomTags>(tagName: K, o
     }
 
     let ele = <CustomTags[K]>document.createElement("div", { is: tagName });
-    ele.style.position = "absolute";
     ele.$owner = owner;
     ele.init();
 
