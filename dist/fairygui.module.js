@@ -16241,7 +16241,7 @@ class TextFormat {
 }
 
 var textMeasureHelper = document.createElement("div");
-textMeasureHelper.id = "text-helper";
+textMeasureHelper.id = "fgui-text-helper";
 textMeasureHelper.style.position = "absolute";
 textMeasureHelper.style.left = "-10000px";
 textMeasureHelper.style.top = "-10000px";
@@ -16271,7 +16271,13 @@ class TextField extends UIElement {
         this._span.style.color = convertToHtmlColor(this._textFormat.color);
         this._span.style.fontWeight = this._textFormat.bold ? "bold" : "";
         this._span.style.fontStyle = this._textFormat.italic ? "italic" : "";
-        this._span.style.textDecoration = this._textFormat.underline ? "underline" : "";
+        let str = this._textFormat.underline ? "underline" : "";
+        if (this._textFormat.strikethrough) {
+            if (str.length > 0)
+                str += " ";
+            str += "line-through";
+        }
+        this._span.style.textDecoration = str;
         if (this._textFormat.outline > 0)
             this._span.style.webkitTextStroke = this._textFormat.outline + "px " + convertToHtmlColor(this._textFormat.outlineColor);
         else if (this._span.style.webkitTextStroke)
@@ -16316,7 +16322,7 @@ class TextField extends UIElement {
         if (!this.isConnected || (this._text.length > 0 && this._span.clientWidth == 0)) {
             usingHelper = true;
             if (!textMeasureHelper.parentElement)
-                window.fguiStage.appendChild(textMeasureHelper);
+                document.body.appendChild(textMeasureHelper);
             textMeasureHelper.appendChild(this._span);
         }
         if (tmpChangWrapping && this._span.clientWidth > this._maxWidth) {
@@ -18213,4 +18219,4 @@ class XML {
     }
 }
 
-export { AsyncOperation, AutoSizeType, ButtonMode, ByteBuffer, ChildrenRenderOrder, Color, ColorMatrix, Controller, DragDropManager, EaseType, Event, EventDispatcher, FillMethod, FillOrigin, FillOrigin90, FlipType, GButton, GComboBox, GComponent, GGraph, GGroup, GImage, GLabel, GList, GLoader, GLoader3D, GMovieClip, GObject, GObjectPool, GProgressBar, GRichTextField, GRoot$1 as GRoot, GScrollBar, GSlider, GTextField, GTextInput, GTree, GTreeNode, GTween, GTweener, GWindow, GearAnimation, GearBase, GearColor, GearDisplay, GearDisplay2, GearFontSize, GearIcon, GearLook, GearSize, GearText, GearXY, GroupLayoutType, Image, InputTextField, ListLayoutType, ListSelectionMode, LoaderFillType, Margin, MovieClip, ObjectPropID, ObjectType, OverflowType, PackageItem, PackageItemType, Pool, PopupDirection, PopupMenu, ProgressTitleType, Rect, RelationType, ScrollBarDisplayType, ScrollPane, ScrollType, Stage, TextField, TextFormat, Timers, Transition, TranslationHelper, UBBParser, UIConfig, UIElement, UIObjectFactory$1 as UIObjectFactory, UIPackage, Vec2, XML, XMLIterator, XMLUtils, clamp, clamp01, convertToHtmlColor, distance, lerp, repeat };
+export { AsyncOperation, AutoSizeType, ButtonMode, ByteBuffer, ChildrenRenderOrder, Color, ColorMatrix, Controller, DragDropManager, EaseType, Event, EventDispatcher, FillMethod, FillOrigin, FillOrigin90, FlipType, GButton, GComboBox, GComponent, GGraph, GGroup, GImage, GLabel, GList, GLoader, GLoader3D, GMovieClip, GObject, GObjectPool, GProgressBar, GRichTextField, GRoot$1 as GRoot, GScrollBar, GSlider, GTextField, GTextInput, GTree, GTreeNode, GTween, GTweener, GWindow, GearAnimation, GearBase, GearColor, GearDisplay, GearDisplay2, GearFontSize, GearIcon, GearLook, GearSize, GearText, GearXY, GroupLayoutType, Image, InputTextField, ListLayoutType, ListSelectionMode, LoaderFillType, Margin, MovieClip, ObjectPropID, ObjectType, OverflowType, PackageItem, PackageItemType, Pool, PopupDirection, PopupMenu, ProgressTitleType, Rect, RelationType, ScrollBarDisplayType, ScrollPane, ScrollType, Stage, TextField, TextFormat, Timers, Transition, TranslationHelper, UBBParser, UIConfig, UIElement, UIObjectFactory$1 as UIObjectFactory, UIPackage, Vec2, XML, XMLIterator, XMLUtils, clamp, clamp01, convertToHtmlColor, defaultParser, distance, lerp, repeat };

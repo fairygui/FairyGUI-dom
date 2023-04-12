@@ -16226,7 +16226,7 @@
     }
 
     var textMeasureHelper = document.createElement("div");
-    textMeasureHelper.id = "text-helper";
+    textMeasureHelper.id = "fgui-text-helper";
     textMeasureHelper.style.position = "absolute";
     textMeasureHelper.style.left = "-10000px";
     textMeasureHelper.style.top = "-10000px";
@@ -16256,7 +16256,13 @@
             this._span.style.color = convertToHtmlColor(this._textFormat.color);
             this._span.style.fontWeight = this._textFormat.bold ? "bold" : "";
             this._span.style.fontStyle = this._textFormat.italic ? "italic" : "";
-            this._span.style.textDecoration = this._textFormat.underline ? "underline" : "";
+            let str = this._textFormat.underline ? "underline" : "";
+            if (this._textFormat.strikethrough) {
+                if (str.length > 0)
+                    str += " ";
+                str += "line-through";
+            }
+            this._span.style.textDecoration = str;
             if (this._textFormat.outline > 0)
                 this._span.style.webkitTextStroke = this._textFormat.outline + "px " + convertToHtmlColor(this._textFormat.outlineColor);
             else if (this._span.style.webkitTextStroke)
@@ -16301,7 +16307,7 @@
             if (!this.isConnected || (this._text.length > 0 && this._span.clientWidth == 0)) {
                 usingHelper = true;
                 if (!textMeasureHelper.parentElement)
-                    window.fguiStage.appendChild(textMeasureHelper);
+                    document.body.appendChild(textMeasureHelper);
                 textMeasureHelper.appendChild(this._span);
             }
             if (tmpChangWrapping && this._span.clientWidth > this._maxWidth) {
@@ -18269,6 +18275,7 @@
     exports.clamp = clamp;
     exports.clamp01 = clamp01;
     exports.convertToHtmlColor = convertToHtmlColor;
+    exports.defaultParser = defaultParser;
     exports.distance = distance;
     exports.lerp = lerp;
     exports.repeat = repeat;

@@ -51,7 +51,12 @@ export class TextField extends UIElement {
         this._span.style.color = convertToHtmlColor(this._textFormat.color);
         this._span.style.fontWeight = this._textFormat.bold ? "bold" : "";
         this._span.style.fontStyle = this._textFormat.italic ? "italic" : "";
-        this._span.style.textDecoration = this._textFormat.underline ? "underline" : "";
+        let str = this._textFormat.underline ? "underline" : "";
+        if (this._textFormat.strikethrough) {
+            if (str.length > 0) str += " ";
+            str += "line-through";
+        }
+        this._span.style.textDecoration = str;
         if (this._textFormat.outline > 0)
             this._span.style.webkitTextStroke = this._textFormat.outline + "px " + convertToHtmlColor(this._textFormat.outlineColor);
         else if (this._span.style.webkitTextStroke)
