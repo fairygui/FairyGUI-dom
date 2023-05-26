@@ -5,7 +5,7 @@ export class XML {
     public name: string;
     public text: string;
 
-    private _attributes: { [index: string]: string };
+    private _attrs: Record<string, string>;
     private _children: Array<XML>;
 
     public constructor(XmlString?: string) {
@@ -13,44 +13,40 @@ export class XML {
             this.parse(XmlString);
     }
 
-    public get attributes(): { [index: string]: string } {
-        if (!this._attributes)
-            this._attributes = {};
-        return this._attributes;
+    public get attributes(): Record<string, string> {
+        if (!this._attrs)
+            this._attrs = {};
+        return this._attrs;
     }
 
     public getAttrString(attrName: string, defValue?: string) {
-        return XMLUtils.getString(this._attributes, attrName, defValue);
+        return XMLUtils.getString(this._attrs, attrName, defValue);
     }
 
     public getAttrInt(attrName: string, defValue?: number): number {
-        return XMLUtils.getInt(this._attributes, attrName, defValue);
+        return XMLUtils.getInt(this._attrs, attrName, defValue);
     }
 
     public getAttrFloat(attrName: string, defValue?: number): number {
-        return XMLUtils.getFloat(this._attributes, attrName, defValue);
+        return XMLUtils.getFloat(this._attrs, attrName, defValue);
     }
 
     public getAttrBool(attrName: string, defValue?: boolean): boolean {
-        return XMLUtils.getBool(this._attributes, attrName, defValue);
-    }
-
-    public getAttrColor(attrName: string, defValue?: number): number {
-        return XMLUtils.getColor(this._attributes, attrName, defValue);
+        return XMLUtils.getBool(this._attrs, attrName, defValue);
     }
 
     public setAttribute(attrName: string, attrValue: string) {
-        if (!this._attributes)
-            this._attributes = {};
+        if (!this._attrs)
+            this._attrs = {};
 
-        this._attributes[attrName] = attrValue;
+        this._attrs[attrName] = attrValue;
     }
 
     public getNode(selector: string): XML {
         if (!this._children)
             return null;
         else
-            this._children.find(value => {
+            return this._children.find(value => {
                 return value.name == selector;
             });
     }
@@ -87,7 +83,7 @@ export class XML {
                 }
 
                 childNode.name = XMLIterator.tagName;
-                childNode._attributes = XMLIterator.getAttributes(childNode._attributes);
+                childNode._attrs = Object.assign({}, XMLIterator.attributes);
 
                 if (lastOpenNode) {
                     if (XMLIterator.tagType != XMLTagType.Void)
@@ -118,7 +114,7 @@ export class XML {
     }
 
     public reset() {
-        this._attributes = null;
+        this._attrs = null;
         if (this._children != null)
             this._children.length == 0;
         this.text = null;

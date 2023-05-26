@@ -10028,10 +10028,10 @@ class XMLUtils {
         while (true) {
             pos2 = aSource.indexOf('&', pos1);
             if (pos2 == -1) {
-                sb += aSource.substr(pos1);
+                sb += aSource.substring(pos1);
                 break;
             }
-            sb += aSource.substr(pos1, pos2 - pos1);
+            sb += aSource.substring(pos1, pos2);
             pos1 = pos2 + 1;
             pos2 = pos1;
             let end = Math.min(len, pos2 + 10);
@@ -10040,14 +10040,14 @@ class XMLUtils {
                     break;
             }
             if (pos2 < end && pos2 > pos1) {
-                let entity = aSource.substr(pos1, pos2 - pos1);
+                let entity = aSource.substring(pos1, pos2);
                 let u = 0;
                 if (entity[0] == '#') {
                     if (entity.length > 1) {
                         if (entity[1] == 'x')
-                            u = parseInt(entity.substr(2), 16);
+                            u = parseInt(entity.substring(2), 16);
                         else
-                            u = parseInt(entity.substr(1));
+                            u = parseInt(entity.substring(1));
                         sb += String.fromCharCode(u);
                         pos1 = pos2 + 1;
                     }
@@ -10104,14 +10104,19 @@ class XMLUtils {
     }
     static getInt(attrs, attrName, defValue) {
         let value = this.getString(attrs, attrName);
-        if (value == null || value.length == 0)
-            return defValue == null ? 0 : defValue;
-        if (value[value.length - 1] == '%') {
-            let ret = parseInt(value.substring(0, value.length - 1));
-            return Math.ceil(ret / 100.0 * defValue);
+        if (value != null && value.length > 0) {
+            if (value[value.length - 1] == '%') {
+                let ret = parseInt(value.substring(0, value.length - 1));
+                if (!isNaN(ret))
+                    return Math.ceil(ret / 100.0 * defValue);
+            }
+            else {
+                let ret = parseInt(value);
+                if (!isNaN(ret))
+                    return ret;
+            }
         }
-        else
-            return parseInt(value);
+        return defValue == null ? 0 : defValue;
     }
     static getFloat(attrs, attrName, defValue) {
         let value = this.getString(attrs, attrName);
@@ -17873,7 +17878,7 @@ class XMLIterator {
                 break;
             c = this.source[pos];
             if (c == '!') {
-                if (this.sourceLen > pos + 7 && this.source.substr(pos - 1, 9) == CDATA_START) {
+                if (this.sourceLen > pos + 7 && this.source.substring(pos - 1, pos + 8) == CDATA_START) {
                     pos = this.source.indexOf(CDATA_END, pos);
                     this.tagType = XMLTagType.CDATA;
                     this.tagName = "";
@@ -17885,7 +17890,7 @@ class XMLIterator {
                     this.parsePos += this.tagLength;
                     return true;
                 }
-                else if (this.sourceLen > pos + 2 && this.source.substr(pos - 1, 4) == COMMENT_START) {
+                else if (this.sourceLen > pos + 2 && this.source.substring(pos - 1, pos + 3) == COMMENT_START) {
                     pos = this.source.indexOf(COMMENT_END, pos);
                     this.tagType = XMLTagType.Comment;
                     this.tagName = "";
@@ -17917,9 +17922,9 @@ class XMLIterator {
             }
             if (pos == this.sourceLen)
                 break;
-            buffer += this.source.substr(this.parsePos + 1, pos - this.parsePos - 1);
+            buffer += this.source.substring(this.parsePos + 1, pos);
             if (buffer.length > 0 && buffer[0] == '/')
-                buffer = buffer.substr(1);
+                buffer = buffer.substring(1);
             let singleQuoted = false, doubleQuoted = false;
             let possibleEnd = -1;
             for (; pos < this.sourceLen; pos++) {
@@ -17962,7 +17967,7 @@ class XMLIterator {
         return false;
     }
     static getTagSource() {
-        return this.source.substr(this.tagPos, this.tagLength);
+        return this.source.substring(this.tagPos, this.tagPos + this.tagLength);
     }
     static getRawText(trim) {
         if (this.lastTagEnd == this.tagPos)
@@ -17977,10 +17982,10 @@ class XMLIterator {
             if (i == this.tagPos)
                 return "";
             else
-                return this.source.substr(i, this.tagPos - i).trim();
+                return this.source.substring(i, this.tagPos).trim();
         }
         else
-            return this.source.substr(this.lastTagEnd, this.tagPos - this.lastTagEnd);
+            return this.source.substring(this.lastTagEnd, this.tagPos);
     }
     static getText(trim) {
         if (this.lastTagEnd == this.tagPos)
@@ -17995,31 +18000,23 @@ class XMLIterator {
             if (i == this.tagPos)
                 return "";
             else
-                return XMLUtils.decodeString(this.source.substr(i, this.tagPos - i)).trimRight();
+                return XMLUtils.decodeString(this.source.substring(i, this.tagPos)).trimRight();
         }
         else
-            return XMLUtils.decodeString(this.source.substr(this.lastTagEnd, this.tagPos - this.lastTagEnd));
+            return XMLUtils.decodeString(this.source.substring(this.lastTagEnd, this.tagPos));
     }
-    static getAttribute(attrName) {
+    static get attributes() {
         if (!this.attrParsed) {
-            for (var key in this.attributes) {
-                delete this.attributes[key];
+            for (let key in this._attrs) {
+                delete this._attrs[key];
             }
-            this.parseAttributes(this.attributes);
+            this.parseAttributes(this._attrs);
             this.attrParsed = true;
         }
-        return this.attributes[attrName];
+        return this._attrs;
     }
-    static getAttributes(result) {
-        if (result == null)
-            result = {};
-        if (this.attrParsed) {
-            for (let k in this.attributes)
-                result[k] = this.attributes[k];
-        }
-        else //这里没有先ParseAttributes再赋值给result是为了节省复制的操作
-            this.parseAttributes(result);
-        return result;
+    static getAttribute(attrName) {
+        return this.attributes[attrName];
     }
     static parseAttributes(attrs) {
         let attrName;
@@ -18090,7 +18087,7 @@ class XMLIterator {
                     if (this.lowerCaseName)
                         attrName = attrName.toLowerCase();
                     buffer = "";
-                    attrs[attrName] = XMLUtils.decodeString(this.source.substr(valueStart, valueEnd - valueStart + 1));
+                    attrs[attrName] = XMLUtils.decodeString(this.source.substring(valueStart, valueEnd + 1));
                     i = valueEnd + 1;
                 }
                 else
@@ -18117,7 +18114,7 @@ class XMLIterator {
         }
     }
 }
-XMLIterator.attributes = {};
+XMLIterator._attrs = {};
 
 class XML {
     constructor(XmlString) {
@@ -18125,35 +18122,32 @@ class XML {
             this.parse(XmlString);
     }
     get attributes() {
-        if (!this._attributes)
-            this._attributes = {};
-        return this._attributes;
+        if (!this._attrs)
+            this._attrs = {};
+        return this._attrs;
     }
     getAttrString(attrName, defValue) {
-        return XMLUtils.getString(this._attributes, attrName, defValue);
+        return XMLUtils.getString(this._attrs, attrName, defValue);
     }
     getAttrInt(attrName, defValue) {
-        return XMLUtils.getInt(this._attributes, attrName, defValue);
+        return XMLUtils.getInt(this._attrs, attrName, defValue);
     }
     getAttrFloat(attrName, defValue) {
-        return XMLUtils.getFloat(this._attributes, attrName, defValue);
+        return XMLUtils.getFloat(this._attrs, attrName, defValue);
     }
     getAttrBool(attrName, defValue) {
-        return XMLUtils.getBool(this._attributes, attrName, defValue);
-    }
-    getAttrColor(attrName, defValue) {
-        return XMLUtils.getColor(this._attributes, attrName, defValue);
+        return XMLUtils.getBool(this._attrs, attrName, defValue);
     }
     setAttribute(attrName, attrValue) {
-        if (!this._attributes)
-            this._attributes = {};
-        this._attributes[attrName] = attrValue;
+        if (!this._attrs)
+            this._attrs = {};
+        this._attrs[attrName] = attrValue;
     }
     getNode(selector) {
         if (!this._children)
             return null;
         else
-            this._children.find(value => {
+            return this._children.find(value => {
                 return value.name == selector;
             });
     }
@@ -18185,7 +18179,7 @@ class XML {
                     childNode = this;
                 }
                 childNode.name = XMLIterator.tagName;
-                childNode._attributes = XMLIterator.getAttributes(childNode._attributes);
+                childNode._attrs = Object.assign({}, XMLIterator.attributes);
                 if (lastOpenNode) {
                     if (XMLIterator.tagType != XMLTagType.Void)
                         nodeStack.push(lastOpenNode);
@@ -18212,7 +18206,7 @@ class XML {
         }
     }
     reset() {
-        this._attributes = null;
+        this._attrs = null;
         if (this._children != null)
             this._children.length == 0;
         this.text = null;
