@@ -347,12 +347,12 @@
             if (!callback)
                 return arr.length > 0;
             else
-                arr.findIndex((value, index, arr) => value == callback && arr[index + 1] == target) != -1;
+                return arr.findIndex((value, index, arr) => value == callback && arr[index + 1] == target) != -1;
         }
         emit(type, data) {
             let col = this._listeners[type];
             if (!col || col.callbacks.length == 0 && col.captures.length == 0)
-                return;
+                return false;
             let ev = EventPool.borrow(type);
             ev._type = type;
             ev.data = data;
@@ -15990,7 +15990,7 @@
             this._tabStopChildren = value;
         }
         get onStage() {
-            return this.isConnected;
+            return this.getRootNode() == this.ownerDocument;
         }
         get stage() {
             let p = this;
@@ -16039,7 +16039,7 @@
                 child._parent = this;
                 child.updateTouchableFlag();
             }
-            if (this.isConnected)
+            if (this.getRootNode() == this.ownerDocument)
                 child.broadcastEvent("added_to_stage");
         }
         removeChild(child) {
@@ -16055,7 +16055,7 @@
         }
         removeChildAt(index) {
             let child = this._children[index];
-            if (this.isConnected) {
+            if (this.getRootNode() == this.ownerDocument) {
                 child.broadcastEvent("removed_from_stage");
                 this.stage.validateFocus(this, child);
             }
@@ -16115,13 +16115,11 @@
         }
         dispose() {
         }
-        traverseVisible(callback) {
-            if (!this._visible)
-                return;
+        traverseChildren(callback) {
             callback(this);
             const children = this._children;
             for (let i = 0, l = children.length; i < l; i++) {
-                children[i].traverseVisible(callback);
+                children[i].traverseChildren(callback);
             }
         }
         traverseAncestors(callback) {
@@ -16137,7 +16135,7 @@
             ev.data = data;
             ev._initiator = this;
             let arr = ev._callChain;
-            this.traverseVisible(obj => {
+            this.traverseChildren(obj => {
                 if (obj.$owner && !obj.$owner.isDisposed)
                     arr.push(obj.$owner);
             });
