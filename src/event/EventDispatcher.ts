@@ -80,7 +80,7 @@ export class EventDispatcher {
         if (!callback)
             return arr.length > 0;
         else
-            arr.findIndex((value, index, arr) => value == callback && arr[index + 1] == target) != -1;
+            return arr.findIndex((value, index, arr) => value == callback && arr[index + 1] == target) != -1;
     }
 
     public emit(type: EventType, data?: any): boolean;
@@ -88,7 +88,7 @@ export class EventDispatcher {
     public emit(type: EventType | string, data?: any): boolean {
         let col = this._listeners[type];
         if (!col || col.callbacks.length == 0 && col.captures.length == 0)
-            return;
+            return false;
 
         let ev = EventPool.borrow(type);
         ev._type = type;
