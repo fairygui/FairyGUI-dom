@@ -365,7 +365,7 @@ export class UIElement extends HTMLDivElement {
     }
 
     public get onStage(): boolean {
-        return this.isConnected;
+        return this.getRootNode() == this.ownerDocument;
     }
 
     public get stage(): IStage {
@@ -426,7 +426,7 @@ export class UIElement extends HTMLDivElement {
             child.updateTouchableFlag();
         }
 
-        if (this.isConnected)
+        if (this.getRootNode() == this.ownerDocument)
             child.broadcastEvent("added_to_stage");
     }
 
@@ -445,7 +445,7 @@ export class UIElement extends HTMLDivElement {
 
     public removeChildAt(index: number) {
         let child: UIElement = this._children[index];
-        if (this.isConnected) {
+        if (this.getRootNode() == this.ownerDocument) {
             child.broadcastEvent("removed_from_stage");
             this.stage.validateFocus(this, child);
         }
@@ -517,14 +517,12 @@ export class UIElement extends HTMLDivElement {
 
     }
 
-    public traverseVisible(callback: (obj: UIElement) => void): void {
-        if (!this._visible) return;
-
+    public traverseChildren(callback: (obj: UIElement) => void): void {
         callback(this);
 
         const children = this._children;
         for (let i = 0, l = children.length; i < l; i++) {
-            children[i].traverseVisible(callback);
+            children[i].traverseChildren(callback);
         }
     }
 
@@ -544,7 +542,7 @@ export class UIElement extends HTMLDivElement {
         ev._initiator = this;
         let arr = ev._callChain;
 
-        this.traverseVisible(obj => {
+        this.traverseChildren(obj => {
             if (obj.$owner && !obj.$owner.isDisposed)
                 arr.push(obj.$owner);
         });
